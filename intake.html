@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patient Intake Form</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #1a2b5e;
+      --navy-light: #243572;
+      --navy-dark: #121f45;
+      --accent: #e8f0fe;
+      --white: #ffffff;
+      --text: #1a1a2e;
+      --border: #b0bec5;
+      --error: #c62828;
+      --success: #2e7d32;
+      --radius: 10px;
+      --shadow: 0 2px 8px rgba(26,43,94,0.12);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f4ff;
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    /* ---------- HEADER ---------- */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 18px 20px 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .header-title { font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+    .header-office { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
+
+    /* ---------- LANGUAGE TOGGLE ---------- */
+    .lang-toggle {
+      display: flex;
+      background: rgba(255,255,255,0.15);
+      border-radius: 30px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .lang-btn {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 30px;
+    }
+    .lang-btn.active {
+      background: var(--white);
+      color: var(--navy);
+    }
+
+    /* ---------- MAIN CONTAINER ---------- */
+    main {
+      max-width: 700px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    /* ---------- SECTION CARDS ---------- */
+    .section-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .section-header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .section-body { padding: 20px; }
+
+    /* ---------- FORM ELEMENTS ---------- */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; }
+    label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    input[type="text"],
+    input[type="tel"],
+    input[type="email"],
+    input[type="date"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 13px 14px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      color: var(--text);
+      background: #fafbff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(26,43,94,0.12);
+    }
+    input.invalid, textarea.invalid {
+      border-color: var(--error);
+    }
+    textarea { resize: vertical; min-height: 90px; }
+
+    /* ---------- CHECKBOXES & RADIOS ---------- */
+    .check-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .check-item, .radio-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+    .check-item:hover, .radio-item:hover {
+      border-color: var(--navy);
+      background: var(--accent);
+    }
+    .check-item input[type="checkbox"],
+    .radio-item input[type="radio"] {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      accent-color: var(--navy);
+      cursor: pointer;
+      border: none;
+      padding: 0;
+    }
+    .check-item input:checked ~ span,
+    .radio-item input:checked ~ span { color: var(--navy); font-weight: 700; }
+    .check-item:has(input:checked),
+    .radio-item:has(input:checked) {
+      border-color: var(--navy);
+      background: var(--accent);
+    }
+
+    .radio-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .radio-item { flex: 1; min-width: 120px; }
+
+    /* "Other" text expand */
+    .other-text {
+      margin-top: 10px;
+      display: none;
+    }
+    .other-text.visible { display: block; }
+
+    /* ---------- PAIN SLIDER ---------- */
+    .pain-scale-wrap { padding: 4px 0 10px; }
+    .pain-value-display {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--navy);
+      text-align: center;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .pain-label {
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 16px;
+      min-height: 18px;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 10px;
+      border-radius: 8px;
+      background: linear-gradient(to right, #4caf50, #ffeb3b, #f44336);
+      outline: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 4px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 4px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    .pain-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: #777;
+      margin-top: 6px;
+      padding: 0 4px;
+    }
+
+    /* ---------- HIPAA TEXT ---------- */
+    .hipaa-text {
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #444;
+      background: #f7f9ff;
+      border: 1px solid #d0d9f0;
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+    }
+
+    /* ---------- SIGNATURE CANVAS ---------- */
+    .sig-wrap {
+      border: 2px solid var(--navy);
+      border-radius: var(--radius);
+      background: #fff;
+      position: relative;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    #sigCanvas {
+      display: block;
+      width: 100%;
+      height: 160px;
+    }
+    .sig-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .sig-hint {
+      font-size: 0.78rem;
+      color: #777;
+    }
+    .btn-clear {
+      padding: 8px 16px;
+      background: transparent;
+      border: 2px solid var(--navy);
+      color: var(--navy);
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-clear:hover { background: var(--accent); }
+
+    /* ---------- CONSENT CHECKBOX ---------- */
+    .consent-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      background: #f7f9ff;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .consent-item input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+      accent-color: var(--navy);
+      margin-top: 2px;
+      border: none;
+      padding: 0;
+    }
+    .consent-item label {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+      cursor: pointer;
+    }
+
+    /* ---------- SUBMIT ---------- */
+    .submit-wrap { padding: 0 0 10px; }
+    .btn-submit {
+      width: 100%;
+      padding: 18px;
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 4px 14px rgba(26,43,94,0.35);
+    }
+    .btn-submit:hover { background: var(--navy-dark); }
+    .btn-submit:active { transform: scale(0.98); }
+
+    /* ---------- TOAST ---------- */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1b5e20;
+      color: white;
+      padding: 14px 28px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transition: transform 0.35s ease;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.error { background: var(--error); }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media (max-width: 480px) {
+      .form-row { grid-template-columns: 1fr; }
+      .check-grid { grid-template-columns: 1fr; }
+      .radio-row { flex-direction: column; }
+      .radio-item { min-width: unset; }
+    }
+
+    /* ---------- SPANISH HIDDEN/SHOWN ---------- */
+    .en { display: inline; }
+    .es { display: none; }
+    body.spanish .en { display: none; }
+    body.spanish .es { display: inline; }
+
+    /* block-level lang spans */
+    .en-block { display: block; }
+    .es-block { display: none; }
+    body.spanish .en-block { display: none; }
+    body.spanish .es-block { display: block; }
+
+    /* required star */
+    .req { color: #c62828; margin-left: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="header-row">
+    <div>
+      <div class="header-title">
+        <span class="en">Patient Intake Form</span>
+        <span class="es">Formulario de Registro de Paciente</span>
+      </div>
+      <div class="header-office" id="officeLabel"></div>
+    </div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btnEn" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="btnEs" onclick="setLang('es')">ES</button>
+    </div>
+  </div>
+</header>
+
+<main>
+<form id="intakeForm" novalidate>
+
+  <!-- ===== PERSONAL INFORMATION ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">Personal Information</span>
+      <span class="es">Informacion Personal</span>
+    </div>
+    <div class="section-body">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">
+            <span class="en">First Name</span><span class="es">Nombre</span>
+            <span class="req">*</span>
+          </label>
+          <input type="text" id="firstName" name="firstName" required
+            placeholder="John / Juan" autocomplete="given-name" />
+        </div>
+        <div class="form-group">
+          <label for="lastName">
+            <span class="en">Last Name</span><span class="es">Apellido</span>
+            <span class="req">*</span>
+          </label>
+          <input type="text" id="lastName" name="lastName" required
+            placeholder="Smith / Garcia" autocomplete="family-name" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dob">
+            <span class="en">Date of Birth</span><span class="es">Fecha de Nacimiento</span>
+          </label>
+          <input type="date" id="dob" name="dob" autocomplete="bday" />
+        </div>
+        <div class="form-group">
+          <label for="phone">
+            <span class="en">Phone</span><span class="es">Telefono</span>
+          </label>
+          <input type="tel" id="phone" name="phone"
+            placeholder="(479) 555-0100" autocomplete="tel" />
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label for="email">
+            <span class="en">Email</span><span class="es">Correo Electronico</span>
+          </label>
+          <input type="email" id="email" name="email"
+            placeholder="you@example.com" autocomplete="email" />
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label for="address">
+            <span class="en">Address</span><span class="es">Direccion</span>
+          </label>
+          <input type="text" id="address" name="address"
+            placeholder="123 Main St, Rogers, AR 72756" autocomplete="street-address" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="emergencyName">
+            <span class="en">Emergency Contact Name</span>
+            <span class="es">Nombre de Contacto de Emergencia</span>
+          </label>
+          <input type="text" id="emergencyName" name="emergencyName"
+            placeholder="Jane Smith" />
+        </div>
+        <div class="form-group">
+          <label for="emergencyPhone">
+            <span class="en">Emergency Contact Phone</span>
+            <span class="es">Telefono de Emergencia</span>
+          </label>
+          <input type="tel" id="emergencyPhone" name="emergencyPhone"
+            placeholder="(479) 555-0200" />
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== CHIEF COMPLAINT ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">Chief Complaint</span>
+      <span class="es">Queja Principal</span>
+    </div>
+    <div class="section-body">
+      <p style="font-size:0.85rem;color:#555;margin-bottom:14px;">
+        <span class="en">Select all that apply:</span>
+        <span class="es">Seleccione todo lo que aplique:</span>
+      </p>
+
+      <div class="check-grid" id="complaintGrid">
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Neck pain" />
+          <span class="en">Neck Pain</span><span class="es">Dolor de Cuello</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Upper back pain" />
+          <span class="en">Upper Back Pain</span><span class="es">Dolor de Espalda Alta</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Mid back pain" />
+          <span class="en">Mid Back Pain</span><span class="es">Dolor de Espalda Media</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Low back pain" />
+          <span class="en">Low Back Pain</span><span class="es">Dolor de Espalda Baja</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Headache" />
+          <span class="en">Headache</span><span class="es">Dolor de Cabeza</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Shoulder pain" />
+          <span class="en">Shoulder Pain</span><span class="es">Dolor de Hombro</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Hip pain" />
+          <span class="en">Hip Pain</span><span class="es">Dolor de Cadera</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Knee pain" />
+          <span class="en">Knee Pain</span><span class="es">Dolor de Rodilla</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Foot/Ankle pain" />
+          <span class="en">Foot / Ankle Pain</span><span class="es">Dolor de Pie / Tobillo</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Numbness/Tingling" />
+          <span class="en">Numbness / Tingling</span><span class="es">Entumecimiento / Hormigueo</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="complaint" value="Other" id="complaintOtherChk" />
+          <span class="en">Other</span><span class="es">Otro</span>
+        </label>
+
+      </div>
+
+      <div class="other-text" id="complaintOtherWrap">
+        <input type="text" id="complaintOtherText" name="complaintOtherText"
+          placeholder="Please describe / Por favor describa" />
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== PAIN SCALE ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">Current Pain Level</span>
+      <span class="es">Nivel de Dolor Actual</span>
+    </div>
+    <div class="section-body">
+      <div class="pain-scale-wrap">
+        <div class="pain-value-display" id="painDisplay">5</div>
+        <div class="pain-label" id="painLabel">Moderate</div>
+        <input type="range" id="painSlider" name="painLevel" min="1" max="10" value="5"
+          oninput="updatePain(this.value)" />
+        <div class="pain-ticks">
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+          <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#777;margin-top:2px;padding:0 4px;">
+          <span class="en">No Pain</span><span class="es">Sin Dolor</span>
+          <span class="en">Worst Pain</span><span class="es">Peor Dolor</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DURATION ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">How Long Have You Had This Condition?</span>
+      <span class="es">Cuanto Tiempo Lleva con Esta Condicion?</span>
+    </div>
+    <div class="section-body">
+      <div class="check-grid">
+
+        <label class="check-item">
+          <input type="checkbox" name="duration" value="Less than 1 week" />
+          <span class="en">Less than 1 week</span><span class="es">Menos de 1 semana</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="duration" value="1-4 weeks" />
+          <span class="en">1 - 4 weeks</span><span class="es">1 - 4 semanas</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="duration" value="1-3 months" />
+          <span class="en">1 - 3 months</span><span class="es">1 - 3 meses</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="duration" value="3-6 months" />
+          <span class="en">3 - 6 months</span><span class="es">3 - 6 meses</span>
+        </label>
+
+        <label class="check-item" style="grid-column: span 2;">
+          <input type="checkbox" name="duration" value="6+ months" />
+          <span class="en">6+ months</span><span class="es">6+ meses</span>
+        </label>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CAUSE ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">What Caused Your Condition?</span>
+      <span class="es">Que Causo su Condicion?</span>
+    </div>
+    <div class="section-body">
+      <div class="check-grid">
+
+        <label class="check-item">
+          <input type="checkbox" name="cause" value="Auto accident" />
+          <span class="en">Auto Accident</span><span class="es">Accidente de Auto</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="cause" value="Work injury" />
+          <span class="en">Work Injury</span><span class="es">Lesion Laboral</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="cause" value="Sports injury" />
+          <span class="en">Sports Injury</span><span class="es">Lesion Deportiva</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="cause" value="Slip and fall" />
+          <span class="en">Slip &amp; Fall</span><span class="es">Resbalon y Caida</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="cause" value="No specific cause" />
+          <span class="en">No Specific Cause</span><span class="es">Sin Causa Especifica</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="cause" value="Other" id="causeOtherChk" />
+          <span class="en">Other</span><span class="es">Otro</span>
+        </label>
+
+      </div>
+      <div class="other-text" id="causeOtherWrap">
+        <input type="text" id="causeOtherText" name="causeOtherText"
+          placeholder="Please describe / Por favor describa" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PREVIOUS CARE ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">Previous Chiropractic Care</span>
+      <span class="es">Atencion Quiropractica Anterior</span>
+    </div>
+    <div class="section-body">
+      <p style="font-size:0.9rem;margin-bottom:14px;">
+        <span class="en">Have you received chiropractic care before?</span>
+        <span class="es">Ha recibido atencion quiropractica antes?</span>
+      </p>
+      <div class="radio-row">
+        <label class="radio-item">
+          <input type="radio" name="prevCare" value="Yes" />
+          <span class="en">Yes</span><span class="es">Si</span>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="prevCare" value="No" />
+          <span class="en">No</span><span class="es">No</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MEDICAL CONDITIONS ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">Medical Conditions</span>
+      <span class="es">Condiciones Medicas</span>
+    </div>
+    <div class="section-body">
+      <p style="font-size:0.85rem;color:#555;margin-bottom:14px;">
+        <span class="en">Check all that apply:</span>
+        <span class="es">Marque todo lo que aplique:</span>
+      </p>
+      <div class="check-grid">
+
+        <label class="check-item">
+          <input type="checkbox" name="medCondition" value="Heart condition" />
+          <span class="en">Heart Condition</span><span class="es">Condicion Cardiaca</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="medCondition" value="Osteoporosis" />
+          <span class="en">Osteoporosis</span><span class="es">Osteoporosis</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="medCondition" value="Recent surgery" />
+          <span class="en">Recent Surgery</span><span class="es">Cirugia Reciente</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="medCondition" value="Cancer history" />
+          <span class="en">Cancer History</span><span class="es">Historial de Cancer</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="medCondition" value="Blood thinners" />
+          <span class="en">Blood Thinners</span><span class="es">Anticoagulantes</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="medCondition" value="Diabetes" />
+          <span class="en">Diabetes</span><span class="es">Diabetes</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="medCondition" value="Pregnancy" />
+          <span class="en">Pregnancy</span><span class="es">Embarazo</span>
+        </label>
+
+        <label class="check-item">
+          <input type="checkbox" name="medCondition" value="Pacemaker" />
+          <span class="en">Pacemaker</span><span class="es">Marcapasos</span>
+        </label>
+
+        <label class="check-item" style="grid-column: span 2;">
+          <input type="checkbox" name="medCondition" value="None of the above" id="noneCondChk" />
+          <span class="en">None of the Above</span><span class="es">Ninguna de las Anteriores</span>
+        </label>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CURRENT MEDICATIONS ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">Current Medications</span>
+      <span class="es">Medicamentos Actuales</span>
+    </div>
+    <div class="section-body">
+      <div class="form-group">
+        <label for="medications">
+          <span class="en">List any medications you are currently taking:</span>
+          <span class="es">Liste los medicamentos que toma actualmente:</span>
+        </label>
+        <textarea id="medications" name="medications"
+          placeholder="e.g. Ibuprofen 400mg, Lisinopril 10mg..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HIPAA AUTHORIZATION ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">HIPAA Authorization &amp; Consent</span>
+      <span class="es">Autorizacion y Consentimiento HIPAA</span>
+    </div>
+    <div class="section-body">
+
+      <div class="hipaa-text">
+        <strong>NOTICE OF PRIVACY PRACTICES &amp; AUTHORIZATION TO USE AND DISCLOSE PROTECTED HEALTH INFORMATION</strong><br/><br/>
+        I understand that under the Health Insurance Portability and Accountability Act of 1996 (HIPAA), I have certain rights regarding my Protected Health Information (PHI). I hereby authorize this chiropractic office to use and disclose my PHI for the purposes of treatment, payment, and healthcare operations as described in their Notice of Privacy Practices.<br/><br/>
+        <strong>Use for Treatment:</strong> My PHI may be used and disclosed to doctors, nurses, technicians, and other healthcare personnel who are involved in my care at this office and at other facilities where I may receive treatment.<br/><br/>
+        <strong>Use for Payment:</strong> My PHI may be used and disclosed so that this office may bill and receive payment from you, an insurance company, or a third party for care I receive. For example, my PHI may be provided to my health insurer to determine eligibility for coverage.<br/><br/>
+        <strong>Use for Healthcare Operations:</strong> My PHI may be used and disclosed for this office's healthcare operations, which include training programs, quality assessment, licensing, and conducting or arranging for other business activities.<br/><br/>
+        I have the right to revoke this authorization at any time by providing a written notice to this office. I understand that this authorization is voluntary. I understand I may inspect or copy the PHI to be used or disclosed as permitted under state and federal law. I acknowledge receipt of the Notice of Privacy Practices.<br/><br/>
+        <strong>CONSENTIMIENTO (Spanish / Espanol):</strong> Entiendo que bajo HIPAA tengo ciertos derechos sobre mi informacion medica protegida. Autorizo a esta oficina quiropractica a usar y divulgar mi informacion para fines de tratamiento, pago y operaciones de salud segun se describe en su Aviso de Practicas de Privacidad. Puedo revocar esta autorizacion en cualquier momento por escrito.
+      </div>
+
+      <p style="font-size:0.85rem;font-weight:700;color:var(--navy);margin-bottom:10px;">
+        <span class="en">Please sign below to acknowledge and authorize:</span>
+        <span class="es">Por favor firme abajo para reconocer y autorizar:</span>
+      </p>
+
+      <div class="sig-wrap">
+        <canvas id="sigCanvas"></canvas>
+      </div>
+      <div class="sig-controls">
+        <span class="sig-hint">
+          <span class="en">Sign with finger or mouse</span>
+          <span class="es">Firme con el dedo o el raton</span>
+        </span>
+        <button type="button" class="btn-clear" onclick="clearSig()">
+          <span class="en">Clear</span><span class="es">Borrar</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== CONSENT TO TEXT ===== -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="en">Text Message Consent</span>
+      <span class="es">Consentimiento para Mensajes de Texto</span>
+    </div>
+    <div class="section-body">
+      <div class="consent-item">
+        <input type="checkbox" id="textConsent" name="textConsent" />
+        <label for="textConsent">
+          <span class="en">I consent to receive appointment reminders, health updates, and office communications via text message (SMS) to the phone number provided. Standard message and data rates may apply. You may opt out at any time by replying STOP.</span>
+          <span class="es">Doy mi consentimiento para recibir recordatorios de citas, actualizaciones de salud y comunicaciones de la oficina por mensaje de texto (SMS) al numero de telefono proporcionado. Pueden aplicarse tarifas estandar de mensajes y datos. Puede cancelar en cualquier momento respondiendo STOP.</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SUBMIT ===== -->
+  <div class="submit-wrap">
+    <button type="submit" class="btn-submit">
+      <span class="en">Submit Intake Form</span>
+      <span class="es">Enviar Formulario de Registro</span>
+    </button>
+  </div>
+
+</form>
+</main>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+/* ---- LANGUAGE ---- */
+function setLang(lang) {
+  if (lang === 'es') {
+    document.body.classList.add('spanish');
+    document.getElementById('btnEn').classList.remove('active');
+    document.getElementById('btnEs').classList.add('active');
+    document.documentElement.lang = 'es';
+  } else {
+    document.body.classList.remove('spanish');
+    document.getElementById('btnEn').classList.add('active');
+    document.getElementById('btnEs').classList.remove('active');
+    document.documentElement.lang = 'en';
+  }
+}
+
+/* ---- OFFICE from URL ---- */
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var office = params.get('office') || '';
+  var label = document.getElementById('officeLabel');
+  if (office) {
+    var display = office.charAt(0).toUpperCase() + office.slice(1);
+    label.textContent = display + ' Office';
+    window._office = display;
+  } else {
+    window._office = 'Main';
+  }
+})();
+
+/* ---- PAIN SCALE ---- */
+var painLabels = {
+  en: ['','No Pain','Minimal','Mild','Mild-Moderate','Moderate','Moderate','Moderate-Severe','Severe','Very Severe','Worst Possible'],
+  es: ['','Sin Dolor','Minimo','Leve','Leve-Moderado','Moderado','Moderado','Moderado-Severo','Severo','Muy Severo','El Peor Posible']
+};
+function updatePain(val) {
+  document.getElementById('painDisplay').textContent = val;
+  var lang = document.body.classList.contains('spanish') ? 'es' : 'en';
+  document.getElementById('painLabel').textContent = painLabels[lang][parseInt(val)] || '';
+}
+updatePain(5);
+
+/* ---- OTHER COMPLAINT TOGGLE ---- */
+document.getElementById('complaintOtherChk').addEventListener('change', function() {
+  var wrap = document.getElementById('complaintOtherWrap');
+  wrap.classList.toggle('visible', this.checked);
+  if (!this.checked) document.getElementById('complaintOtherText').value = '';
+});
+
+/* ---- OTHER CAUSE TOGGLE ---- */
+document.getElementById('causeOtherChk').addEventListener('change', function() {
+  var wrap = document.getElementById('causeOtherWrap');
+  wrap.classList.toggle('visible', this.checked);
+  if (!this.checked) document.getElementById('causeOtherText').value = '';
+});
+
+/* ---- NONE OF ABOVE for MEDICAL CONDITIONS ---- */
+document.getElementById('noneCondChk').addEventListener('change', function() {
+  if (this.checked) {
+    document.querySelectorAll('input[name="medCondition"]').forEach(function(cb) {
+      if (cb !== document.getElementById('noneCondChk')) cb.checked = false;
+    });
+  }
+});
+document.querySelectorAll('input[name="medCondition"]').forEach(function(cb) {
+  if (cb.id !== 'noneCondChk') {
+    cb.addEventListener('change', function() {
+      if (this.checked) document.getElementById('noneCondChk').checked = false;
+    });
+  }
+});
+
+/* ---- SIGNATURE CANVAS ---- */
+(function() {
+  var canvas = document.getElementById('sigCanvas');
+  var ctx = canvas.getContext('2d');
+  var drawing = false;
+  var lastX = 0, lastY = 0;
+
+  function resize() {
+    var rect = canvas.getBoundingClientRect();
+    var ratio = window.devicePixelRatio || 1;
+    var data = canvas.toDataURL();
+    canvas.width = rect.width * ratio;
+    canvas.height = 160 * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1a2b5e';
+  }
+
+  function getPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    if (e.touches) {
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    }
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  function startDraw(e) {
+    drawing = true;
+    var pos = getPos(e);
+    lastX = pos.x; lastY = pos.y;
+    e.preventDefault();
+  }
+  function draw(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    var pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastX = pos.x; lastY = pos.y;
+  }
+  function stopDraw() { drawing = false; }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', stopDraw);
+  canvas.addEventListener('mouseleave', stopDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove', draw, { passive: false });
+  canvas.addEventListener('touchend', stopDraw);
+
+  window.clearSig = function() { ctx.clearRect(0, 0, canvas.width, canvas.height); };
+  window._getSigDataUrl = function() { return canvas.toDataURL(); };
+  window._isSigEmpty = function() {
+    var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    for (var i = 3; i < data.length; i += 4) { if (data[i] !== 0) return false; }
+    return true;
+  };
+
+  resize();
+  window.addEventListener('resize', resize);
+})();
+
+/* ---- TOAST ---- */
+function showToast(msg, isError) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error' : '';
+  setTimeout(function() { t.classList.add('show'); }, 10);
+  setTimeout(function() { t.classList.remove('show'); }, 4000);
+}
+
+/* ---- HELPERS ---- */
+function getChecked(name) {
+  return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked'))
+    .map(function(el) { return el.value; });
+}
+
+/* ---- FORM SUBMIT ---- */
+document.getElementById('intakeForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  /* Validation */
+  var valid = true;
+  ['firstName', 'lastName'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el.value.trim()) { el.classList.add('invalid'); valid = false; }
+    else { el.classList.remove('invalid'); }
+  });
+
+  if (!valid) {
+    showToast(document.body.classList.contains('spanish')
+      ? 'Por favor complete los campos requeridos.'
+      : 'Please complete required fields.', true);
+    return;
+  }
+
+  /* Collect data */
+  var firstName  = document.getElementById('firstName').value.trim();
+  var lastName   = document.getElementById('lastName').value.trim();
+  var dob        = document.getElementById('dob').value;
+  var phone      = document.getElementById('phone').value.trim();
+  var email      = document.getElementById('email').value.trim();
+  var address    = document.getElementById('address').value.trim();
+  var emgName    = document.getElementById('emergencyName').value.trim();
+  var emgPhone   = document.getElementById('emergencyPhone').value.trim();
+  var painLevel  = document.getElementById('painSlider').value;
+  var medications= document.getElementById('medications').value.trim();
+  var textConsent= document.getElementById('textConsent').checked;
+  var office     = window._office;
+
+  var complaints = getChecked('complaint');
+  if (document.getElementById('complaintOtherChk').checked) {
+    var ot = document.getElementById('complaintOtherText').value.trim();
+    if (ot) complaints = complaints.map(function(c) { return c === 'Other' ? 'Other: ' + ot : c; });
+  }
+
+  var durations   = getChecked('duration');
+  var causes      = getChecked('cause');
+  if (document.getElementById('causeOtherChk').checked) {
+    var co = document.getElementById('causeOtherText').value.trim();
+    if (co) causes = causes.map(function(c) { return c === 'Other' ? 'Other: ' + co : c; });
+  }
+  var medConds    = getChecked('medCondition');
+  var prevCare    = (document.querySelector('input[name="prevCare"]:checked') || {}).value || 'Not answered';
+
+  var sigDataUrl  = window._getSigDataUrl();
+  var sigSigned   = !window._isSigEmpty();
+
+  /* Build record */
+  var record = {
+    office: office,
+    timestamp: new Date().toISOString(),
+    firstName: firstName,
+    lastName: lastName,
+    dob: dob,
+    phone: phone,
+    email: email,
+    address: address,
+    emergencyName: emgName,
+    emergencyPhone: emgPhone,
+    chiefComplaints: complaints,
+    painLevel: parseInt(painLevel),
+    durations: durations,
+    causes: causes,
+    previousCare: prevCare,
+    medicalConditions: medConds,
+    medications: medications,
+    textConsent: textConsent,
+    hipaaSignature: sigSigned,
+    signatureData: sigDataUrl
+  };
+
+  /* Save to localStorage */
+  var key = 'intake_' + office + '_' + Date.now();
+  try { localStorage.setItem(key, JSON.stringify(record)); } catch(ex) {}
+
+  /* WhatsApp notification */
+  var chiefComplaintStr = complaints.length ? complaints.join(', ') : 'Not specified';
+  var waMsgLines = [
+    '--- NEW PATIENT INTAKE ---',
+    'Office: ' + office,
+    'Name: ' + firstName + ' ' + lastName,
+    'Phone: ' + (phone || 'N/A'),
+    'DOB: ' + (dob || 'N/A'),
+    'Chief Complaint: ' + chiefComplaintStr,
+    'Pain Level: ' + painLevel + '/10',
+    'Text Consent: ' + (textConsent ? 'Yes' : 'No'),
+    'Submitted: ' + new Date().toLocaleString('en-US')
+  ];
+  var waMsg = waMsgLines.join('\n');
+
+  fetch('http://localhost:3000/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chatId: '14794264007@c.us',
+      body: waMsg
+    })
+  }).catch(function() {
+    /* Silently fail — office may not have WA bridge running */
+  });
+
+  /* Show success */
+  showToast(document.body.classList.contains('spanish')
+    ? 'Formulario enviado. Gracias!'
+    : 'Form submitted. Thank you!');
+
+  /* Reset form after short delay */
+  setTimeout(function() {
+    document.getElementById('intakeForm').reset();
+    clearSig();
+    document.getElementById('complaintOtherWrap').classList.remove('visible');
+    document.getElementById('causeOtherWrap').classList.remove('visible');
+    updatePain(5);
+    document.getElementById('painSlider').value = 5;
+    ['firstName','lastName'].forEach(function(id) {
+      document.getElementById(id).classList.remove('invalid');
+    });
+  }, 1500);
+});
+
+/* Remove invalid class on input */
+document.querySelectorAll('input[required]').forEach(function(el) {
+  el.addEventListener('input', function() { this.classList.remove('invalid'); });
+});
+</script>
+</body>
+</html>

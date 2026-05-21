@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chiropractic Scheduling System</title>
+<style>
+  :root {
+    --navy: #1a2b5e;
+    --navy-dark: #111e45;
+    --navy-light: #2a3f80;
+    --white: #ffffff;
+    --light-gray: #f4f6fb;
+    --mid-gray: #dde3f0;
+    --text-gray: #4a5568;
+    --green: #27ae60;
+    --red: #e74c3c;
+    --orange: #e67e22;
+    --yellow: #f1c40f;
+    --stripe-blue: #635bff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--light-gray);
+    color: #2d3748;
+    min-height: 100vh;
+  }
+
+  /* ===== PIN SCREEN ===== */
+  #pin-screen {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--navy-light) 100%);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+
+  .pin-box {
+    background: white;
+    border-radius: 16px;
+    padding: 48px 40px 40px;
+    width: 360px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  }
+
+  .pin-logo {
+    width: 72px; height: 72px;
+    background: var(--navy);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+  }
+
+  .pin-box h1 {
+    color: var(--navy);
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .pin-box p {
+    color: var(--text-gray);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  .pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .pin-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--navy);
+    background: transparent;
+    transition: background 0.15s;
+  }
+
+  .pin-dot.filled { background: var(--navy); }
+
+  .pin-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .pin-key {
+    background: var(--light-gray);
+    border: 1px solid var(--mid-gray);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--navy);
+    cursor: pointer;
+    transition: all 0.1s;
+    user-select: none;
+  }
+
+  .pin-key:hover { background: var(--mid-gray); }
+  .pin-key:active { transform: scale(0.95); background: var(--navy); color: white; }
+  .pin-key.wide { grid-column: span 2; }
+
+  .pin-error {
+    color: var(--red);
+    font-size: 13px;
+    margin-bottom: 12px;
+    min-height: 18px;
+  }
+
+  .pin-remember {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-gray);
+    cursor: pointer;
+  }
+
+  .pin-remember input { cursor: pointer; }
+
+  /* ===== MAIN APP ===== */
+  #app { display: none; }
+
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+
+  .header-brand {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 18px; font-weight: 700;
+  }
+
+  .header-brand span { font-size: 26px; }
+
+  .header-actions {
+    display: flex; align-items: center; gap: 16px;
+  }
+
+  .badge {
+    background: var(--red);
+    color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+
+  .btn-outline-white {
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    color: white;
+  }
+
+  .btn-outline-white:hover { background: rgba(255,255,255,0.1); }
+
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+  }
+
+  .btn-primary:hover { background: var(--navy-dark); }
+
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+
+  .btn-success:hover { background: #219a52; }
+
+  .btn-danger {
+    background: var(--red);
+    color: white;
+  }
+
+  .btn-danger:hover { background: #c0392b; }
+
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* ===== BANNER ===== */
+  #rate-banner {
+    display: none;
+    background: linear-gradient(90deg, #e67e22, #e74c3c);
+    color: white;
+    text-align: center;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  /* ===== TABS ===== */
+  .main-nav {
+    background: white;
+    border-bottom: 2px solid var(--mid-gray);
+    padding: 0 24px;
+    display: flex;
+    gap: 0;
+  }
+
+  .nav-tab {
+    padding: 16px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-gray);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .nav-tab:hover { color: var(--navy); }
+  .nav-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+
+  /* ===== CONTENT ===== */
+  .content { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+  /* ===== WEEK NAV ===== */
+  .week-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 12px;
+    padding: 14px 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+
+  .week-nav h2 { font-size: 17px; color: var(--navy); }
+
+  .week-nav-btns { display: flex; gap: 8px; }
+
+  /* ===== CALENDAR GRID ===== */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .cal-day {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+    overflow: hidden;
+  }
+
+  .cal-day-header {
+    background: var(--navy);
+    color: white;
+    padding: 12px 16px;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .cal-day-header .slot-count {
+    font-size: 12px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-weight: 500;
+  }
+
+  .cal-slots { padding: 8px; }
+
+  .slot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    font-size: 13px;
+    transition: all 0.15s;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+  }
+
+  .slot.available {
+    background: #edfaf3;
+    border-color: #a8e6c3;
+    color: #1a6b3f;
+  }
+
+  .slot.available:hover {
+    background: #d4f5e4;
+    border-color: var(--green);
+    transform: translateX(2px);
+  }
+
+  .slot.booked-pending {
+    background: #fff8e6;
+    border-color: #ffd580;
+    color: #7a5200;
+    cursor: default;
+  }
+
+  .slot.booked-confirmed {
+    background: #e8f0ff;
+    border-color: #a0b4f5;
+    color: #1a2b5e;
+    cursor: default;
+  }
+
+  .slot-time { font-weight: 700; min-width: 58px; }
+
+  .slot-info { flex: 1; padding: 0 8px; font-size: 12px; }
+
+  .slot-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .badge-available { background: var(--green); color: white; }
+  .badge-pending { background: var(--orange); color: white; }
+  .badge-confirmed { background: var(--navy); color: white; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(10,20,60,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+
+  .modal-header {
+    background: var(--navy);
+    color: white;
+    padding: 20px 24px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-header h3 { font-size: 18px; }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.8;
+  }
+
+  .modal-close:hover { opacity: 1; }
+
+  .modal-body { padding: 24px; }
+
+  .modal-footer {
+    padding: 16px 24px 24px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    border-top: 1px solid var(--mid-gray);
+  }
+
+  /* ===== FORM ===== */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .form-group { margin-bottom: 14px; }
+
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 5px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--mid-gray);
+    border-radius: 8px;
+    font-size: 14px;
+    color: #2d3748;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--navy);
+  }
+
+  .form-group textarea { resize: vertical; min-height: 72px; }
+
+  .price-tag {
+    display: inline-block;
+    background: var(--navy);
+    color: white;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+
+  /* ===== PAYMENT BOX ===== */
+  .payment-box {
+    background: #f0f2ff;
+    border: 1.5px solid #c5cbf0;
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 14px;
+  }
+
+  .payment-box .pay-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--stripe-blue);
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .payment-box .pay-note {
+    font-size: 12px;
+    color: var(--text-gray);
+    margin-bottom: 10px;
+  }
+
+  .stripe-placeholder {
+    background: white;
+    border: 1.5px dashed #a0aec0;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    color: #718096;
+    font-size: 13px;
+  }
+
+  /* ===== POLICY BOX ===== */
+  .policy-box {
+    background: #fff5f5;
+    border: 1.5px solid #fca5a5;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: #7f1d1d;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  /* ===== APPOINTMENTS LIST ===== */
+  .appt-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+    border-left: 4px solid var(--navy);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .appt-card.pending { border-left-color: var(--orange); }
+  .appt-card.confirmed { border-left-color: var(--green); }
+  .appt-card.denied { border-left-color: var(--red); opacity: 0.5; }
+
+  .appt-info { flex: 1; }
+  .appt-name { font-weight: 700; color: var(--navy); font-size: 15px; }
+  .appt-detail { font-size: 13px; color: var(--text-gray); margin-top: 2px; }
+  .appt-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+
+  .status-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .status-pending { background: #fff3cd; color: #7a5200; }
+  .status-confirmed { background: #d4edda; color: #155724; }
+  .status-denied { background: #f8d7da; color: #721c24; }
+
+  /* ===== REMINDER INFO ===== */
+  .reminder-box {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 16px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+  }
+
+  .reminder-box h3 {
+    color: var(--navy);
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+
+  .reminder-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--mid-gray);
+    font-size: 13px;
+    color: var(--text-gray);
+  }
+
+  .reminder-item:last-child { border-bottom: none; }
+  .reminder-icon { font-size: 18px; }
+
+  /* ===== SECTION HEADER ===== */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-header h2 {
+    color: var(--navy);
+    font-size: 18px;
+  }
+
+  /* ===== FILTER ROW ===== */
+  .filter-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1.5px solid var(--mid-gray);
+    background: white;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+
+  .filter-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+  /* ===== TABS (page level) ===== */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===== INFO STRIP ===== */
+  .info-strip {
+    background: var(--navy);
+    color: rgba(255,255,255,0.85);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-gray);
+  }
+
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* ===== SUCCESS MODAL ===== */
+  .success-content {
+    text-align: center;
+    padding: 32px 24px;
+  }
+
+  .success-icon { font-size: 56px; margin-bottom: 16px; }
+  .success-content h3 { color: var(--green); font-size: 22px; margin-bottom: 8px; }
+  .success-content p { color: var(--text-gray); font-size: 14px; line-height: 1.6; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 700px) {
+    .cal-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .modal { max-width: 100%; }
+    .content { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PIN Screen -->
+<div id="pin-screen">
+  <div class="pin-box">
+    <div class="pin-logo">🦴</div>
+    <h1>Chiropractic Scheduling</h1>
+    <p>Enter your staff PIN to access scheduling</p>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="dot-0"></div>
+      <div class="pin-dot" id="dot-1"></div>
+      <div class="pin-dot" id="dot-2"></div>
+      <div class="pin-dot" id="dot-3"></div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+    <div class="pin-keypad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key" onclick="pinKey('back')">⌫</button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key" onclick="pinKey('clear')">✕</button>
+    </div>
+    <label class="pin-remember">
+      <input type="checkbox" id="pin-remember-cb"> Remember this device for 30 days
+    </label>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="header-brand">
+      <span>🦴</span> Chiropractic Scheduling
+    </div>
+    <div class="header-actions">
+      <span id="pending-badge-header" style="display:none;">
+        Pending <span class="badge" id="pending-count-header">0</span>
+      </span>
+      <button class="btn btn-outline-white" onclick="showPage('appointments')">Appointments</button>
+      <button class="btn btn-outline-white" onclick="lockApp()">🔒 Lock</button>
+    </div>
+  </header>
+
+  <!-- Rate Increase Banner -->
+  <div id="rate-banner">
+    ⚠️ Rate increase effective July 1, 2026 — New Patient $75 · Existing Patient $50 · 4-Visit Plan $160
+  </div>
+
+  <!-- Main Navigation -->
+  <nav class="main-nav" id="main-nav">
+    <div class="nav-tab active" onclick="showPage('rogers')" data-page="rogers">📍 Rogers</div>
+    <div class="nav-tab" onclick="showPage('eureka')" data-page="eureka">📍 Eureka Springs</div>
+    <div class="nav-tab" onclick="showPage('appointments')" data-page="appointments">📋 Appointments</div>
+  </nav>
+
+  <!-- Rogers Page -->
+  <div class="page active" id="page-rogers">
+    <div class="content">
+      <div class="info-strip">
+        ℹ️ Rogers office: Wed / Fri / Sat · Slots fill backwards from 10:00 AM · Max 20 patients/day
+      </div>
+      <div class="week-nav">
+        <button class="btn btn-primary" onclick="changeWeek('rogers', -1)">← Prev Week</button>
+        <h2 id="rogers-week-label">Week of ...</h2>
+        <button class="btn btn-primary" onclick="changeWeek('rogers', 1)">Next Week →</button>
+      </div>
+      <div class="cal-grid" id="rogers-cal"></div>
+    </div>
+  </div>
+
+  <!-- Eureka Springs Page -->
+  <div class="page" id="page-eureka">
+    <div class="content">
+      <div class="info-strip">
+        ℹ️ Eureka Springs office: Wed / Fri / Sat · Slots fill forwards from 11:00 AM · Max 20 patients/day
+      </div>
+      <div class="week-nav">
+        <button class="btn btn-primary" onclick="changeWeek('eureka', -1)">← Prev Week</button>
+        <h2 id="eureka-week-label">Week of ...</h2>
+        <button class="btn btn-primary" onclick="changeWeek('eureka', 1)">Next Week →</button>
+      </div>
+      <div class="cal-grid" id="eureka-cal"></div>
+    </div>
+  </div>
+
+  <!-- Appointments Page -->
+  <div class="page" id="page-appointments">
+    <div class="content">
+      <div class="section-header">
+        <h2>All Appointments</h2>
+      </div>
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="filterAppts(this,'all')">All</button>
+        <button class="filter-btn" onclick="filterAppts(this,'pending')">⏳ Pending</button>
+        <button class="filter-btn" onclick="filterAppts(this,'confirmed')">✅ Confirmed</button>
+        <button class="filter-btn" onclick="filterAppts(this,'denied')">❌ Denied</button>
+        <button class="filter-btn" onclick="filterAppts(this,'rogers')">Rogers</button>
+        <button class="filter-btn" onclick="filterAppts(this,'eureka')">Eureka Springs</button>
+      </div>
+      <div id="appt-list"></div>
+
+      <div class="reminder-box">
+        <h3>📅 Reminder Schedule</h3>
+        <div class="reminder-item">
+          <span class="reminder-icon">🔔</span>
+          <span><strong>24 hours before</strong> — Automated reminder (SMS/email backend required)</span>
+        </div>
+        <div class="reminder-item">
+          <span class="reminder-icon">⏰</span>
+          <span><strong>2 hours before</strong> — Final reminder (SMS/email backend required)</span>
+        </div>
+        <div class="reminder-item">
+          <span class="reminder-icon">💬</span>
+          <span>WhatsApp notifications are sent immediately on new bookings via localhost:3000</span>
+        </div>
+        <div class="reminder-item">
+          <span class="reminder-icon">🚫</span>
+          <span><strong>Cancellation Policy:</strong> Cancellations under 24 hours before appointment forfeit payment</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- Booking Modal -->
+<div class="modal-overlay" id="booking-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📅 Book Appointment</h3>
+      <button class="modal-close" onclick="closeModal('booking-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-strip" id="booking-slot-info" style="margin-bottom:16px;"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name *</label>
+          <input type="text" id="f-first" placeholder="Jane">
+        </div>
+        <div class="form-group">
+          <label>Last Name *</label>
+          <input type="text" id="f-last" placeholder="Smith">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Phone *</label>
+          <input type="tel" id="f-phone" placeholder="(555) 555-5555">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="jane@email.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Chief Complaint (optional)</label>
+        <textarea id="f-complaint" placeholder="Brief description of symptoms or reason for visit..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Appointment Type *</label>
+          <select id="f-type" onchange="updatePrice()">
+            <option value="">— Select type —</option>
+            <option value="new">New Patient</option>
+            <option value="existing">Existing Patient</option>
+            <option value="prepay4">Prepay 4-Visit Plan</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Recurring *</label>
+          <select id="f-recurring">
+            <option value="one-time">One Time</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Every 2 Weeks</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="price-display" style="margin-bottom:14px; display:none;">
+        <span style="font-weight:600; color:var(--navy);">Fee:</span>
+        <span class="price-tag" id="price-amount"></span>
+      </div>
+
+      <div class="payment-box">
+        <div class="pay-header">
+          <span>💳</span> Payment Required
+        </div>
+        <div class="pay-note">
+          Stripe integration active (test mode). Payment will be collected at appointment. Stripe Publishable Key: pk_test_51RsyfNH...
+        </div>
+        <div class="stripe-placeholder">
+          🔒 Secure payment via Stripe will be available at checkout.<br>
+          <small style="color:#a0aec0;">Appointment booked as PENDING until confirmed by Dr.</small>
+        </div>
+      </div>
+
+      <div class="policy-box">
+        <span>⚠️</span>
+        <span><strong>Cancellation Policy:</strong> Cancellations made less than 24 hours before your appointment will forfeit the session payment.</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" style="background:var(--mid-gray);" onclick="closeModal('booking-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="submitBooking()">📨 Book Appointment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal-overlay" id="success-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-body">
+      <div class="success-content">
+        <div class="success-icon">✅</div>
+        <h3>Booking Submitted!</h3>
+        <p id="success-text"></p>
+        <div style="margin-top:20px;">
+          <button class="btn btn-primary" onclick="closeModal('success-modal')">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Appointment Detail Modal -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3>Appointment Details</h3>
+      <button class="modal-close" onclick="closeModal('detail-modal')">×</button>
+    </div>
+    <div class="modal-body" id="detail-modal-body"></div>
+    <div class="modal-footer" id="detail-modal-footer"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const CORRECT_PIN = '1234';
+const STRIPE_PK = 'pk_test_51RsyfNHuBEYgFLrSncLIeqJM5ynshu2b9bvMasTHC9pkD5scG1vzvl1onI1sMfeK8xrVxXOFSMal6nH7znDGj0FA00PNM94Vbh';
+const WHATSAPP_ENDPOINT = 'http://localhost:3000/send';
+const WHATSAPP_CHAT_ID = '14794264007@c.us';
+const MAX_PATIENTS = 20;
+const SLOT_MINUTES = 15;
+const WEEKS_OUT = 6;
+const OFFICE_DAYS = [3, 5, 6]; // Wed=3, Fri=5, Sat=6
+
+// Prices
+const PRICES = {
+  new:      { before: 60, after: 75 },
+  existing: { before: 40, after: 50 },
+  prepay4:  { before: 140, after: 160 }
+};
+
+const PRICE_CHANGE_DATE = new Date('2026-07-01');
+const BANNER_START = new Date('2026-06-01');
+const BANNER_END = new Date('2026-06-30T23:59:59');
+
+const TYPE_LABELS = {
+  new: 'New Patient',
+  existing: 'Existing Patient',
+  prepay4: 'Prepay 4-Visit Plan'
+};
+
+// ============================================================
+// STORAGE HELPERS
+// ============================================================
+function saveAppts(data) {
+  localStorage.setItem('chiro_appts', JSON.stringify(data));
+}
+
+function loadAppts() {
+  try {
+    return JSON.parse(localStorage.getItem('chiro_appts')) || [];
+  } catch(e) { return []; }
+}
+
+function getApptKey(office, dateStr, time) {
+  return `${office}|${dateStr}|${time}`;
+}
+
+// ============================================================
+// PRICE HELPER
+// ============================================================
+function getPrice(type, dateStr) {
+  const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+  const isAfter = d >= PRICE_CHANGE_DATE;
+  return PRICES[type] ? (isAfter ? PRICES[type].after : PRICES[type].before) : 0;
+}
+
+// ============================================================
+// PIN LOGIC
+// ============================================================
+let pinEntry = '';
+
+function pinKey(val) {
+  const err = document.getElementById('pin-error');
+  err.textContent = '';
+
+  if (val === 'back') {
+    pinEntry = pinEntry.slice(0, -1);
+  } else if (val === 'clear') {
+    pinEntry = '';
+  } else {
+    if (pinEntry.length < 4) pinEntry += val;
+  }
+
+  updatePinDots();
+
+  if (pinEntry.length === 4) {
+    setTimeout(() => {
+      if (pinEntry === CORRECT_PIN) {
+        const remember = document.getElementById('pin-remember-cb').checked;
+        if (remember) {
+          const exp = Date.now() + (30 * 24 * 60 * 60 * 1000);
+          localStorage.setItem('chiro_pin_exp', exp.toString());
+        }
+        unlockApp();
+      } else {
+        err.textContent = 'Incorrect PIN. Please try again.';
+        pinEntry = '';
+        updatePinDots();
+        document.getElementById('pin-screen').style.animation = 'none';
+      }
+    }, 120);
+  }
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('dot-' + i);
+    dot.classList.toggle('filled', i < pinEntry.length);
+  }
+}
+
+function checkStoredPin() {
+  const exp = localStorage.getItem('chiro_pin_exp');
+  if (exp && Date.now() < parseInt(exp)) {
+    unlockApp();
+  }
+}
+
+function unlockApp() {
+  document.getElementById('pin-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  initApp();
+}
+
+function lockApp() {
+  localStorage.removeItem('chiro_pin_exp');
+  pinEntry = '';
+  updatePinDots();
+  document.getElementById('pin-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ============================================================
+// APP STATE
+// ============================================================
+let rogersWeekOffset = 0;
+let eurekaWeekOffset = 0;
+let currentBooking = null;
+let apptFilter = 'all';
+
+// ============================================================
+// INIT
+// ============================================================
+function initApp() {
+  checkBanner();
+  renderCalendar('rogers');
+  renderCalendar('eureka');
+  renderAppointments();
+}
+
+function checkBanner() {
+  const now = new Date();
+  const banner = document.getElementById('rate-banner');
+  if (now >= BANNER_START && now <= BANNER_END) {
+    banner.style.display = 'block';
+  }
+}
+
+// ============================================================
+// PAGE NAVIGATION
+// ============================================================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const tab = document.querySelector(`[data-page="${page}"]`);
+  if (tab) tab.classList.add('active');
+  if (page === 'appointments') renderAppointments();
+}
+
+// ============================================================
+// WEEK HELPERS
+// ============================================================
+function getWeekStart(offset) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  // Go to Monday of current week
+  const day = today.getDay();
+  const diff = (day === 0) ? -6 : (1 - day);
+  today.setDate(today.getDate() + diff + (offset * 7));
+  return today;
+}
+
+function changeWeek(office, dir) {
+  if (office === 'rogers') {
+    rogersWeekOffset += dir;
+    if (rogersWeekOffset < 0) rogersWeekOffset = 0;
+    if (rogersWeekOffset > WEEKS_OUT) rogersWeekOffset = WEEKS_OUT;
+  } else {
+    eurekaWeekOffset += dir;
+    if (eurekaWeekOffset < 0) eurekaWeekOffset = 0;
+    if (eurekaWeekOffset > WEEKS_OUT) eurekaWeekOffset = WEEKS_OUT;
+  }
+  renderCalendar(office);
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+}
+
+function formatDateShort(d) {
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function toDateStr(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function formatTime(h, m) {
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m.toString().padStart(2,'0')} ${suffix}`;
+}
+
+// ============================================================
+// SLOT GENERATION
+// ============================================================
+// Rogers: backwards from 10:00 AM (so 9:45, 9:30, ...)
+// Eureka: forwards from 11:00 AM (11:00, 11:15, 11:30, ...)
+
+function generateSlots(office) {
+  const slots = [];
+  if (office === 'rogers') {
+    // Backwards from 10:00 AM, 20 slots => earliest = 10:00 - 20*15min = 5:00 AM
+    // Show them in display order: earliest time first (ascending)
+    let totalMins = 10 * 60; // 10:00 AM in minutes from midnight
+    const slotsArr = [];
+    for (let i = 0; i < MAX_PATIENTS; i++) {
+      totalMins -= SLOT_MINUTES;
+      slotsArr.push(totalMins);
+    }
+    slotsArr.reverse();
+    slotsArr.forEach(m => {
+      slots.push({ h: Math.floor(m/60), m: m%60 });
+    });
+  } else {
+    // Forwards from 11:00 AM
+    let totalMins = 11 * 60;
+    for (let i = 0; i < MAX_PATIENTS; i++) {
+      slots.push({ h: Math.floor(totalMins/60), m: totalMins%60 });
+      totalMins += SLOT_MINUTES;
+    }
+  }
+  return slots;
+}
+
+// ============================================================
+// RENDER CALENDAR
+// ============================================================
+function renderCalendar(office) {
+  const offset = office === 'rogers' ? rogersWeekOffset : eurekaWeekOffset;
+  const weekStart = getWeekStart(offset);
+  const label = document.getElementById(office + '-week-label');
+  const calEl = document.getElementById(office + '-cal');
+
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  label.textContent = `Week of ${formatDateShort(weekStart)} – ${formatDateShort(weekEnd)}`;
+
+  const appts = loadAppts();
+  const slots = generateSlots(office);
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  calEl.innerHTML = '';
+
+  // Find days in this week that match OFFICE_DAYS (Wed=3, Fri=5, Sat=6)
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(weekStart);
+    day.setDate(weekStart.getDate() + i);
+    const jsDay = day.getDay();
+    if (!OFFICE_DAYS.includes(jsDay)) continue;
+
+    const dateStr = toDateStr(day);
+    const isPast = day < today;
+
+    const dayEl = document.createElement('div');
+    dayEl.className = 'cal-day';
+
+    // Count booked slots
+    const bookedForDay = appts.filter(a => a.office === office && a.date === dateStr && a.status !== 'denied');
+    const available = MAX_PATIENTS - bookedForDay.length;
+
+    const hdr = document.createElement('div');
+    hdr.className = 'cal-day-header';
+    hdr.innerHTML = `
+      <span>${formatDate(day)}</span>
+      <span class="slot-count">${available}/${MAX_PATIENTS} open</span>
+    `;
+    dayEl.appendChild(hdr);
+
+    const slotsEl = document.createElement('div');
+    slotsEl.className = 'cal-slots';
+
+    slots.forEach(s => {
+      const timeStr = formatTime(s.h, s.m);
+      const key = getApptKey(office, dateStr, timeStr);
+      const appt = appts.find(a => a.office === office && a.date === dateStr && a.time === timeStr && a.status !== 'denied');
+
+      const slotEl = document.createElement('div');
+
+      if (isPast) {
+        slotEl.className = 'slot booked-confirmed';
+        slotEl.innerHTML = `<span class="slot-time">${timeStr}</span><span class="slot-info">Past</span>`;
+      } else if (appt) {
+        const cls = appt.status === 'confirmed' ? 'booked-confirmed' : 'booked-pending';
+        const badgeCls = appt.status === 'confirmed' ? 'badge-confirmed' : 'badge-pending';
+        const badgeTxt = appt.status === 'confirmed' ? 'Confirmed' : 'Pending';
+        slotEl.className = `slot ${cls}`;
+        slotEl.innerHTML = `
+          <span class="slot-time">${timeStr}</span>
+          <span class="slot-info">${appt.first} ${appt.last}<br><small>${TYPE_LABELS[appt.type]||appt.type}</small></span>
+          <span class="slot-badge ${badgeCls}">${badgeTxt}</span>
+        `;
+        slotEl.onclick = () => showApptDetail(appt.id);
+      } else {
+        slotEl.className = 'slot available';
+        slotEl.innerHTML = `
+          <span class="slot-time">${timeStr}</span>
+          <span class="slot-info">Available</span>
+          <span class="slot-badge badge-available">Book</span>
+        `;
+        slotEl.onclick = () => openBookingModal(office, dateStr, timeStr, day);
+      }
+
+      slotsEl.appendChild(slotEl);
+    });
+
+    dayEl.appendChild(slotsEl);
+    calEl.appendChild(dayEl);
+  }
+}
+
+// ============================================================
+// BOOKING MODAL
+// ============================================================
+function openBookingModal(office, dateStr, timeStr, dateObj) {
+  currentBooking = { office, dateStr, timeStr, dateObj };
+  const label = `${office === 'rogers' ? 'Rogers' : 'Eureka Springs'} · ${formatDate(dateObj)} at ${timeStr}`;
+  document.getElementById('booking-slot-info').textContent = '📅 ' + label;
+  document.getElementById('f-first').value = '';
+  document.getElementById('f-last').value = '';
+  document.getElementById('f-phone').value = '';
+  document.getElementById('f-email').value = '';
+  document.getElementById('f-complaint').value = '';
+  document.getElementById('f-type').value = '';
+  document.getElementById('f-recurring').value = 'one-time';
+  document.getElementById('price-display').style.display = 'none';
+  openModal('booking-modal');
+}
+
+function updatePrice() {
+  const type = document.getElementById('f-type').value;
+  const priceEl = document.getElementById('price-display');
+  const amtEl = document.getElementById('price-amount');
+  if (!type || !currentBooking) {
+    priceEl.style.display = 'none';
+    return;
+  }
+  const price = getPrice(type, currentBooking.dateStr);
+  amtEl.textContent = `$${price}`;
+  priceEl.style.display = 'block';
+}
+
+function submitBooking() {
+  const first = document.getElementById('f-first').value.trim();
+  const last = document.getElementById('f-last').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const type = document.getElementById('f-type').value;
+
+  if (!first || !last || !phone || !type) {
+    alert('Please fill in all required fields (First Name, Last Name, Phone, Appointment Type).');
+    return;
+  }
+
+  const email = document.getElementById('f-email').value.trim();
+  const complaint = document.getElementById('f-complaint').value.trim();
+  const recurring = document.getElementById('f-recurring').value;
+  const fee = getPrice(type, currentBooking.dateStr);
+  const id = 'appt_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+
+  const appt = {
+    id,
+    office: currentBooking.office,
+    date: currentBooking.dateStr,
+    time: currentBooking.timeStr,
+    first, last, phone, email, complaint,
+    type, recurring, fee,
+    status: 'pending',
+    created: new Date().toISOString()
+  };
+
+  const appts = loadAppts();
+  // Check slot isn't taken
+  const conflict = appts.find(a => a.office === appt.office && a.date === appt.date && a.time === appt.time && a.status !== 'denied');
+  if (conflict) {
+    alert('This slot was just booked. Please select another time.');
+    closeModal('booking-modal');
+    renderCalendar(currentBooking.office);
+    return;
+  }
+
+  appts.push(appt);
+  saveAppts(appts);
+
+  // WhatsApp notification
+  sendWhatsApp(appt);
+
+  closeModal('booking-modal');
+  renderCalendar(currentBooking.office);
+  updatePendingBadge();
+
+  document.getElementById('success-text').innerHTML = `
+    <strong>${first} ${last}</strong> has been booked for<br>
+    <strong>${currentBooking.office === 'rogers' ? 'Rogers' : 'Eureka Springs'}</strong><br>
+    ${formatDate(currentBooking.dateObj)} at ${currentBooking.timeStr}<br><br>
+    Status: <strong>PENDING</strong> — Dr. will review and approve.<br>
+    <small style="color:#a0aec0;">WhatsApp notification sent.</small>
+  `;
+  openModal('success-modal');
+}
+
+// ============================================================
+// WHATSAPP
+// ============================================================
+function sendWhatsApp(appt) {
+  const officeLabel = appt.office === 'rogers' ? 'Rogers' : 'Eureka Springs';
+  const msg = [
+    'New Booking PENDING',
+    `Patient: ${appt.first} ${appt.last}`,
+    `Phone: ${appt.phone}`,
+    `Office: ${officeLabel}`,
+    `Date/Time: ${appt.date} at ${appt.time}`,
+    `Type: ${TYPE_LABELS[appt.type]} - $${appt.fee}`,
+    `Complaint: ${appt.complaint || 'N/A'}`,
+    `Recurring: ${appt.recurring}`,
+    `Intake: pending`,
+    `Reply APPROVE or DENY`
+  ].join('\n');
+
+  fetch(WHATSAPP_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chatId: WHATSAPP_CHAT_ID, message: msg })
+  }).catch(err => {
+    console.warn('WhatsApp send failed (backend may not be running):', err.message);
+  });
+}
+
+// ============================================================
+// APPOINTMENTS LIST
+// ============================================================
+function filterAppts(btn, filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  apptFilter = filter;
+  renderAppointments();
+}
+
+function renderAppointments() {
+  const appts = loadAppts();
+  const listEl = document.getElementById('appt-list');
+  if (!listEl) return;
+
+  // Sort newest first
+  const sorted = [...appts].sort((a,b) => new Date(b.created) - new Date(a.created));
+
+  const filtered = sorted.filter(a => {
+    if (apptFilter === 'all') return true;
+    if (apptFilter === 'pending') return a.status === 'pending';
+    if (apptFilter === 'confirmed') return a.status === 'confirmed';
+    if (apptFilter === 'denied') return a.status === 'denied';
+    if (apptFilter === 'rogers') return a.office === 'rogers';
+    if (apptFilter === 'eureka') return a.office === 'eureka';
+    return true;
+  });
+
+  updatePendingBadge();
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>No appointments found.</p>
+      </div>
+    `;
+    return;
+  }
+
+  listEl.innerHTML = '';
+  filtered.forEach(a => {
+    const card = document.createElement('div');
+    card.className = `appt-card ${a.status}`;
+
+    const officeLabel = a.office === 'rogers' ? 'Rogers' : 'Eureka Springs';
+    const statusPillCls = `status-${a.status}`;
+    const statusLabel = a.status.charAt(0).toUpperCase() + a.status.slice(1);
+
+    card.innerHTML = `
+      <div class="appt-info">
+        <div class="appt-name">${a.first} ${a.last} <span class="status-pill ${statusPillCls}">${statusLabel}</span></div>
+        <div class="appt-detail">📍 ${officeLabel} · ${a.date} at ${a.time}</div>
+        <div class="appt-detail">🩺 ${TYPE_LABELS[a.type]||a.type} · $${a.fee} · ${a.recurring}</div>
+        <div class="appt-detail">📞 ${a.phone}${a.email ? ' · ' + a.email : ''}</div>
+        ${a.complaint ? `<div class="appt-detail">💬 ${a.complaint}</div>` : ''}
+      </div>
+      <div class="appt-actions">
+        ${a.status === 'pending' ? `
+          <button class="btn btn-success btn-sm" onclick="approveAppt('${a.id}')">✅ Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="denyAppt('${a.id}')">❌ Deny</button>
+        ` : ''}
+        ${a.status === 'confirmed' ? `
+          <button class="btn btn-danger btn-sm" onclick="denyAppt('${a.id}')">Cancel</button>
+        ` : ''}
+        ${a.status === 'denied' ? `
+          <button class="btn btn-sm" style="background:var(--mid-gray);" onclick="deleteAppt('${a.id}')">🗑 Remove</button>
+        ` : ''}
+      </div>
+    `;
+    listEl.appendChild(card);
+  });
+}
+
+function approveAppt(id) {
+  const appts = loadAppts();
+  const idx = appts.findIndex(a => a.id === id);
+  if (idx >= 0) {
+    appts[idx].status = 'confirmed';
+    saveAppts(appts);
+    renderAppointments();
+    renderCalendar('rogers');
+    renderCalendar('eureka');
+    updatePendingBadge();
+  }
+}
+
+function denyAppt(id) {
+  if (!confirm('Are you sure you want to deny/cancel this appointment?')) return;
+  const appts = loadAppts();
+  const idx = appts.findIndex(a => a.id === id);
+  if (idx >= 0) {
+    appts[idx].status = 'denied';
+    saveAppts(appts);
+    renderAppointments();
+    renderCalendar('rogers');
+    renderCalendar('eureka');
+    updatePendingBadge();
+  }
+}
+
+function deleteAppt(id) {
+  if (!confirm('Permanently remove this appointment record?')) return;
+  const appts = loadAppts().filter(a => a.id !== id);
+  saveAppts(appts);
+  renderAppointments();
+}
+
+function updatePendingBadge() {
+  const appts = loadAppts();
+  const count = appts.filter(a => a.status === 'pending').length;
+  const badgeEl = document.getElementById('pending-badge-header');
+  const countEl = document.getElementById('pending-count-header');
+  if (count > 0) {
+    badgeEl.style.display = 'inline-flex';
+    badgeEl.style.alignItems = 'center';
+    badgeEl.style.gap = '6px';
+    countEl.textContent = count;
+  } else {
+    badgeEl.style.display = 'none';
+  }
+}
+
+// ============================================================
+// DETAIL MODAL
+// ============================================================
+function showApptDetail(id) {
+  const appt = loadAppts().find(a => a.id === id);
+  if (!appt) return;
+  const officeLabel = appt.office === 'rogers' ? 'Rogers' : 'Eureka Springs';
+  const body = document.getElementById('detail-modal-body');
+  const footer = document.getElementById('detail-modal-footer');
+
+  body.innerHTML = `
+    <div style="display:grid; gap:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="color:var(--navy);">${appt.first} ${appt.last}</h2>
+        <span class="status-pill status-${appt.status}">${appt.status}</span>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--mid-gray);">
+      <div class="appt-detail">📍 <strong>Office:</strong> ${officeLabel}</div>
+      <div class="appt-detail">📅 <strong>Date:</strong> ${appt.date} at ${appt.time}</div>
+      <div class="appt-detail">🩺 <strong>Type:</strong> ${TYPE_LABELS[appt.type]||appt.type}</div>
+      <div class="appt-detail">💰 <strong>Fee:</strong> $${appt.fee}</div>
+      <div class="appt-detail">🔄 <strong>Recurring:</strong> ${appt.recurring}</div>
+      <div class="appt-detail">📞 <strong>Phone:</strong> ${appt.phone}</div>
+      ${appt.email ? `<div class="appt-detail">📧 <strong>Email:</strong> ${appt.email}</div>` : ''}
+      ${appt.complaint ? `<div class="appt-detail">💬 <strong>Complaint:</strong> ${appt.complaint}</div>` : ''}
+      <div class="appt-detail" style="color:#a0aec0; font-size:11px;">ID: ${appt.id} · Booked: ${new Date(appt.created).toLocaleString()}</div>
+    </div>
+  `;
+
+  footer.innerHTML = `
+    ${appt.status === 'pending' ? `
+      <button class="btn btn-success" onclick="approveAppt('${appt.id}'); closeModal('detail-modal');">✅ Approve</button>
+      <button class="btn btn-danger" onclick="denyAppt('${appt.id}'); closeModal('detail-modal');">❌ Deny</button>
+    ` : ''}
+    ${appt.status === 'confirmed' ? `
+      <button class="btn btn-danger" onclick="denyAppt('${appt.id}'); closeModal('detail-modal');">Cancel Appointment</button>
+    ` : ''}
+    <button class="btn" style="background:var(--mid-gray);" onclick="closeModal('detail-modal')">Close</button>
+  `;
+
+  openModal('detail-modal');
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+
+// Keyboard: Enter to submit PIN
+document.addEventListener('keydown', function(e) {
+  if (document.getElementById('pin-screen').style.display !== 'none') {
+    if (e.key >= '0' && e.key <= '9') pinKey(e.key);
+    if (e.key === 'Backspace') pinKey('back');
+    if (e.key === 'Escape') pinKey('clear');
+  }
+});
+
+// ============================================================
+// BOOTSTRAP
+// ============================================================
+checkStoredPin();
+</script>
+</body>
+</html>

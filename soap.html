@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chiropractic SOAP Notes</title>
+<style>
+  :root {
+    --navy: #1a2b5e;
+    --navy-light: #243472;
+    --navy-dark: #111d42;
+    --accent: #2e5bff;
+    --accent-light: #e8edff;
+    --white: #ffffff;
+    --gray-50: #f8f9fc;
+    --gray-100: #eef0f6;
+    --gray-200: #d8dce8;
+    --gray-300: #b0b8d0;
+    --gray-400: #8090b0;
+    --gray-600: #445580;
+    --gray-700: #2d3a5e;
+    --red: #e53e3e;
+    --green: #2f855a;
+    --green-light: #c6f6d5;
+    --shadow: 0 2px 12px rgba(26,43,94,0.10);
+    --shadow-lg: 0 8px 32px rgba(26,43,94,0.18);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-700);
+    min-height: 100vh;
+  }
+
+  /* ── PIN OVERLAY ── */
+  #pin-overlay {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--navy-light) 100%);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  #pin-box {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 48px 40px 40px;
+    width: 360px;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+  }
+  #pin-box .logo-icon {
+    width: 64px; height: 64px;
+    background: var(--navy);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+    font-size: 32px;
+  }
+  #pin-box h2 { color: var(--navy); font-size: 1.5rem; margin-bottom: 4px; }
+  #pin-box p { color: var(--gray-400); font-size: 0.88rem; margin-bottom: 28px; }
+  #pin-dots {
+    display: flex; justify-content: center; gap: 14px; margin-bottom: 24px;
+  }
+  .pin-dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-300);
+    background: var(--white);
+    transition: all 0.2s;
+  }
+  .pin-dot.filled { background: var(--navy); border-color: var(--navy); }
+  #pin-keypad {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-bottom: 16px;
+  }
+  .pin-key {
+    height: 52px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    background: var(--gray-50);
+    font-size: 1.2rem; font-weight: 600;
+    color: var(--navy);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pin-key:hover { background: var(--accent-light); border-color: var(--accent); }
+  .pin-key:active { transform: scale(0.95); }
+  .pin-key.clear { font-size: 0.85rem; color: var(--gray-400); }
+  .pin-key.submit { background: var(--navy); color: var(--white); border-color: var(--navy); }
+  .pin-key.submit:hover { background: var(--navy-light); }
+  #pin-error {
+    color: var(--red); font-size: 0.85rem; min-height: 20px; margin-bottom: 8px;
+  }
+  #pin-remember {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 0.85rem; color: var(--gray-600);
+  }
+  #pin-remember input { accent-color: var(--navy); width: 16px; height: 16px; cursor: pointer; }
+
+  /* ── MAIN APP ── */
+  #app { display: none; }
+
+  header {
+    background: var(--navy);
+    color: var(--white);
+    padding: 0 32px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-logo {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .header-title { font-size: 1.15rem; font-weight: 700; }
+  .header-sub { font-size: 0.78rem; opacity: 0.7; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .btn-lock {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--white);
+    padding: 7px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+  .btn-lock:hover { background: rgba(255,255,255,0.22); }
+
+  .main-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .card-header {
+    background: var(--navy);
+    color: var(--white);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 0.95rem;
+    letter-spacing: 0.02em;
+  }
+  .card-header .section-icon { font-size: 1.1rem; }
+  .card-header .section-badge {
+    margin-left: auto;
+    background: rgba(255,255,255,0.18);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem; font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .card-body { padding: 20px; }
+
+  /* ── PATIENT SEARCH ── */
+  .search-row {
+    display: flex; gap: 10px; margin-bottom: 14px;
+  }
+  .search-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    color: var(--gray-700);
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { outline: none; border-color: var(--accent); }
+  .btn {
+    padding: 10px 20px;
+    border: none; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 0.9rem; font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--navy); color: var(--white); }
+  .btn-primary:hover { background: var(--navy-light); }
+  .btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1.5px solid var(--gray-200); }
+  .btn-secondary:hover { background: var(--gray-200); }
+  .btn-success { background: var(--green); color: var(--white); }
+  .btn-success:hover { opacity: 0.9; }
+  .btn-danger { background: var(--red); color: var(--white); }
+  .btn-danger:hover { opacity: 0.9; }
+  .btn-accent { background: var(--accent); color: var(--white); }
+  .btn-accent:hover { opacity: 0.9; }
+  .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+
+  #search-results {
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    max-height: 200px; overflow-y: auto;
+    display: none;
+    margin-bottom: 12px;
+  }
+  .search-result-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--gray-100);
+    transition: background 0.15s;
+  }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: var(--accent-light); }
+  .result-name { font-weight: 600; color: var(--navy); }
+  .result-detail { font-size: 0.82rem; color: var(--gray-400); }
+  .result-visits { font-size: 0.78rem; background: var(--navy); color: var(--white); padding: 2px 8px; border-radius: 10px; }
+
+  .quick-entry {
+    background: var(--gray-50);
+    border: 1.5px dashed var(--gray-300);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    display: none;
+  }
+  .quick-entry h4 { color: var(--navy); margin-bottom: 10px; font-size: 0.9rem; }
+  .quick-entry-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ── GRID LAYOUTS ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .span-2 { grid-column: span 2; }
+
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-label {
+    font-size: 0.8rem; font-weight: 700;
+    color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .form-control {
+    padding: 9px 13px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+    color: var(--gray-700);
+    background: var(--white);
+    transition: border-color 0.2s;
+  }
+  .form-control:focus { outline: none; border-color: var(--accent); }
+  .form-control[readonly] { background: var(--gray-50); color: var(--gray-600); }
+
+  /* ── CHECKBOXES ── */
+  .checkbox-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .checkbox-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .checkbox-item input[type="checkbox"] { display: none; }
+  .checkbox-item:hover { border-color: var(--accent); background: var(--accent-light); }
+  .checkbox-item.checked {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: var(--white);
+  }
+
+  /* ── PAIN SCALE ── */
+  .pain-scale-row {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  #pain-slider {
+    flex: 1; min-width: 200px;
+    -webkit-appearance: none; appearance: none;
+    height: 6px; border-radius: 3px;
+    background: linear-gradient(to right, var(--green) 0%, #f6c347 50%, var(--red) 100%);
+    outline: none;
+  }
+  #pain-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--navy);
+    border: 3px solid var(--white);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    cursor: pointer;
+  }
+  .pain-display {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; font-weight: 800;
+  }
+  .pain-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--gray-400); margin-top: 4px; }
+
+  /* ── RADIO GROUPS ── */
+  .radio-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .radio-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 20px;
+    cursor: pointer; font-size: 0.85rem;
+    transition: all 0.15s; user-select: none;
+  }
+  .radio-item input[type="radio"] { display: none; }
+  .radio-item:hover { border-color: var(--accent); background: var(--accent-light); }
+  .radio-item.selected { background: var(--navy); border-color: var(--navy); color: var(--white); }
+
+  /* ── VOICE DICTATION ── */
+  .voice-row { display: flex; gap: 10px; align-items: flex-start; }
+  .voice-row textarea {
+    flex: 1;
+    padding: 10px 13px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem; resize: vertical; min-height: 80px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .voice-row textarea:focus { outline: none; border-color: var(--accent); }
+  .btn-voice {
+    padding: 10px 14px;
+    background: var(--gray-100);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 1.2rem;
+    transition: all 0.2s; white-space: nowrap;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+  .btn-voice span { font-size: 0.7rem; color: var(--gray-400); font-weight: 600; }
+  .btn-voice:hover { background: var(--accent-light); border-color: var(--accent); }
+  .btn-voice.recording { background: #fff0f0; border-color: var(--red); animation: pulse 1s infinite; }
+  .btn-voice.recording span { color: var(--red); }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+
+  /* ── SUBLUXATION GRID ── */
+  .sublux-section { margin-bottom: 16px; }
+  .sublux-label {
+    font-size: 0.82rem; font-weight: 700;
+    color: var(--navy); margin-bottom: 8px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--accent-light);
+  }
+  .spine-grid {
+    display: flex; flex-wrap: wrap; gap: 7px;
+  }
+  .spine-btn {
+    width: 52px; height: 38px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    font-size: 0.82rem; font-weight: 700;
+    color: var(--gray-600);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .spine-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+  .spine-btn.active { background: var(--navy); border-color: var(--navy); color: var(--white); }
+
+  /* ── ROM TABLE ── */
+  .rom-group { margin-bottom: 14px; }
+  .rom-label { font-weight: 700; color: var(--navy); margin-bottom: 8px; font-size: 0.88rem; }
+
+  /* ── SIGNATURE ── */
+  .sig-container {
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    position: relative;
+    cursor: crosshair;
+  }
+  #sig-canvas { display: block; width: 100%; height: 130px; border-radius: var(--radius-sm); }
+  .sig-toolbar {
+    display: flex; gap: 8px; margin-top: 8px; align-items: center;
+  }
+  .sig-hint { font-size: 0.78rem; color: var(--gray-400); }
+
+  /* ── HISTORY TIMELINE ── */
+  #history-section { display: none; }
+  .history-empty { text-align: center; padding: 30px; color: var(--gray-400); font-size: 0.9rem; }
+  .visit-card {
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .visit-card-header {
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+    background: var(--gray-50);
+    transition: background 0.15s;
+  }
+  .visit-card-header:hover { background: var(--accent-light); }
+  .visit-num {
+    width: 32px; height: 32px;
+    background: var(--navy); color: var(--white);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.82rem; font-weight: 800; flex-shrink: 0;
+  }
+  .visit-date { font-weight: 700; color: var(--navy); }
+  .visit-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+  .visit-tag {
+    font-size: 0.75rem; padding: 2px 9px;
+    border-radius: 12px; background: var(--accent-light); color: var(--accent);
+    font-weight: 700;
+  }
+  .visit-pain-tag { background: #fff3cd; color: #856404; }
+  .visit-expand { color: var(--gray-400); font-size: 0.8rem; margin-left: 8px; }
+  .visit-body {
+    padding: 14px 16px;
+    display: none;
+    border-top: 1px solid var(--gray-200);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  .visit-body.open { display: block; }
+  .visit-body dt { font-weight: 700; color: var(--navy); margin-top: 8px; }
+  .visit-body dd { color: var(--gray-600); }
+
+  /* ── ACTION BAR ── */
+  .action-bar {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    padding: 20px 0 0;
+  }
+  .action-bar .btn { padding: 12px 28px; font-size: 0.95rem; }
+
+  /* ── DIVIDERS ── */
+  .section-divider {
+    font-size: 0.78rem; font-weight: 800;
+    color: var(--gray-400); text-transform: uppercase;
+    letter-spacing: 0.08em; margin: 16px 0 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--gray-200);
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--navy); color: var(--white);
+    padding: 12px 24px; border-radius: var(--radius);
+    font-size: 0.9rem; font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.35s cubic-bezier(.4,0,.2,1);
+    z-index: 5000;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { background: var(--green); }
+  #toast.error { background: var(--red); }
+
+  /* ── PRINT CSS ── */
+  @media print {
+    #pin-overlay, header, .action-bar, .btn-voice, .sig-toolbar,
+    #history-section, #search-section { display: none !important; }
+    body { background: white; }
+    .main-content { max-width: 100%; padding: 0; }
+    .card { box-shadow: none; border: 1px solid #ccc; margin-bottom: 12px; break-inside: avoid; }
+    .card-header { background: #1a2b5e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .spine-btn.active { background: #1a2b5e !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .checkbox-item.checked { background: #1a2b5e !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #sig-canvas { border: 1px solid #ccc; }
+    @page { margin: 0.5in; }
+  }
+
+  @media (max-width: 600px) {
+    .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+    .span-2 { grid-column: span 1; }
+    header { padding: 0 14px; }
+    .main-content { padding: 14px 10px 50px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     PIN OVERLAY
+═══════════════════════════════════════ -->
+<div id="pin-overlay">
+  <div id="pin-box">
+    <div class="logo-icon">🦴</div>
+    <h2>SOAP Notes</h2>
+    <p>Enter your PIN to access patient records</p>
+    <div id="pin-dots">
+      <div class="pin-dot" id="dot-0"></div>
+      <div class="pin-dot" id="dot-1"></div>
+      <div class="pin-dot" id="dot-2"></div>
+      <div class="pin-dot" id="dot-3"></div>
+    </div>
+    <div id="pin-keypad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key clear" onclick="pinClear()">⌫ Clear</button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key submit" onclick="pinSubmit()">Enter</button>
+    </div>
+    <div id="pin-error"></div>
+    <label id="pin-remember">
+      <input type="checkbox" id="remember-device"> Remember this device for 30 days
+    </label>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════ -->
+<div id="app">
+
+  <header>
+    <div class="header-left">
+      <div class="header-logo">🦴</div>
+      <div>
+        <div class="header-title">Chiropractic SOAP Notes</div>
+        <div class="header-sub">Clinical Documentation System</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="header-date" style="color:rgba(255,255,255,0.7);font-size:0.85rem;"></span>
+      <button class="btn-lock" onclick="lockApp()">🔒 Lock</button>
+    </div>
+  </header>
+
+  <div class="main-content">
+
+    <!-- ── 1. PATIENT SEARCH ── -->
+    <div class="card" id="search-section">
+      <div class="card-header">
+        <span class="section-icon">🔍</span> Patient Search
+        <span class="section-badge">STEP 1</span>
+      </div>
+      <div class="card-body">
+        <div class="search-row">
+          <input type="text" id="pt-search" class="search-input" placeholder="Search by name or phone number..." oninput="searchPatients()" onkeydown="if(event.key==='Enter')searchPatients()">
+          <button class="btn btn-primary" onclick="searchPatients()">Search</button>
+          <button class="btn btn-secondary" onclick="toggleQuickEntry()">+ Quick Entry</button>
+          <button class="btn btn-secondary" onclick="clearForm()">New Form</button>
+        </div>
+        <div id="search-results"></div>
+        <div class="quick-entry" id="quick-entry">
+          <h4>Quick Patient Entry (New or Walk-In)</h4>
+          <div class="quick-entry-row">
+            <input type="text" id="quick-fname" class="search-input" placeholder="First name" style="flex:1;">
+            <input type="text" id="quick-lname" class="search-input" placeholder="Last name" style="flex:1;">
+            <input type="text" id="quick-phone" class="search-input" placeholder="Phone (optional)" style="flex:1;">
+            <button class="btn btn-primary" onclick="createQuickPatient()">Load Patient</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. VISIT HEADER ── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="section-icon">📋</span> Visit Header
+        <span class="section-badge">STEP 2</span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Patient Name</label>
+            <input type="text" id="pt-name" class="form-control" readonly placeholder="Select patient above">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date of Birth</label>
+            <input type="text" id="pt-dob" class="form-control" readonly placeholder="—">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="text" id="pt-phone" class="form-control" readonly placeholder="—">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Visit Date</label>
+            <input type="date" id="visit-date" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Visit Time</label>
+            <input type="time" id="visit-time" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Visit Number</label>
+            <input type="text" id="visit-num" class="form-control" readonly placeholder="Auto-filled">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Provider / Office</label>
+            <select id="office-select" class="form-control">
+              <option value="">Select Office / Doctor</option>
+              <option>Dr. Smith — Main Office</option>
+              <option>Dr. Johnson — North Branch</option>
+              <option>Dr. Williams — South Branch</option>
+              <option>Dr. Brown — East Branch</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Patient ID</label>
+            <input type="text" id="pt-id" class="form-control" readonly placeholder="—">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 3. SUBJECTIVE ── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="section-icon">💬</span> Subjective (S)
+        <span class="section-badge">STEP 3</span>
+      </div>
+      <div class="card-body">
+
+        <div class="section-divider">Chief Complaint</div>
+        <div class="checkbox-grid" id="chief-complaint">
+          <label class="checkbox-item"><input type="checkbox" value="Neck pain"> Neck pain</label>
+          <label class="checkbox-item"><input type="checkbox" value="Upper back pain"> Upper back pain</label>
+          <label class="checkbox-item"><input type="checkbox" value="Mid back pain"> Mid back pain</label>
+          <label class="checkbox-item"><input type="checkbox" value="Low back pain"> Low back pain</label>
+          <label class="checkbox-item"><input type="checkbox" value="Headache"> Headache</label>
+          <label class="checkbox-item"><input type="checkbox" value="Shoulder pain"> Shoulder pain</label>
+          <label class="checkbox-item"><input type="checkbox" value="Hip pain"> Hip pain</label>
+          <label class="checkbox-item"><input type="checkbox" value="Knee pain"> Knee pain</label>
+          <label class="checkbox-item"><input type="checkbox" value="Foot/Ankle pain"> Foot/Ankle pain</label>
+          <label class="checkbox-item"><input type="checkbox" value="Numbness/Tingling"> Numbness/Tingling</label>
+          <label class="checkbox-item"><input type="checkbox" value="Other"> Other</label>
+        </div>
+
+        <div class="section-divider" style="margin-top:20px;">Pain Scale</div>
+        <div class="pain-scale-row">
+          <div class="pain-display" id="pain-num">5</div>
+          <div style="flex:1;">
+            <input type="range" id="pain-slider" min="1" max="10" value="5" oninput="updatePain(this.value)">
+            <div class="pain-labels"><span>1 Minimal</span><span>5 Moderate</span><span>10 Severe</span></div>
+          </div>
+        </div>
+
+        <div class="section-divider" style="margin-top:20px;">Compared to Last Visit</div>
+        <div class="radio-group" id="compared-group">
+          <label class="radio-item"><input type="radio" name="compared" value="Much better"> Much better</label>
+          <label class="radio-item"><input type="radio" name="compared" value="Somewhat better"> Somewhat better</label>
+          <label class="radio-item"><input type="radio" name="compared" value="Same"> Same</label>
+          <label class="radio-item"><input type="radio" name="compared" value="Somewhat worse"> Somewhat worse</label>
+          <label class="radio-item"><input type="radio" name="compared" value="Much worse"> Much worse</label>
+          <label class="radio-item"><input type="radio" name="compared" value="First visit"> First visit</label>
+        </div>
+
+        <div class="section-divider" style="margin-top:20px;">Additional Subjective Notes</div>
+        <div class="voice-row">
+          <textarea id="subj-notes" placeholder="Patient's subjective description of symptoms, history, aggravating/relieving factors..."></textarea>
+          <button class="btn-voice" id="voice-subj" onclick="toggleVoice('subj-notes','voice-subj')" title="Voice dictation">
+            🎤
+            <span id="voice-subj-lbl">DICTATE</span>
+          </button>
+        </div>
+        <div id="voice-subj-status" style="font-size:0.78rem;color:var(--gray-400);margin-top:4px;"></div>
+
+      </div>
+    </div>
+
+    <!-- ── 4. OBJECTIVE ── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="section-icon">🔬</span> Objective (O)
+        <span class="section-badge">STEP 4</span>
+      </div>
+      <div class="card-body">
+
+        <div class="section-divider">Posture Findings</div>
+        <div class="checkbox-grid" id="posture-findings">
+          <label class="checkbox-item"><input type="checkbox" value="Antalgic lean right"> Antalgic lean right</label>
+          <label class="checkbox-item"><input type="checkbox" value="Antalgic lean left"> Antalgic lean left</label>
+          <label class="checkbox-item"><input type="checkbox" value="Forward head posture"> Forward head posture</label>
+          <label class="checkbox-item"><input type="checkbox" value="Elevated shoulder right"> Elevated shoulder right</label>
+          <label class="checkbox-item"><input type="checkbox" value="Elevated shoulder left"> Elevated shoulder left</label>
+          <label class="checkbox-item"><input type="checkbox" value="Elevated hip right"> Elevated hip right</label>
+          <label class="checkbox-item"><input type="checkbox" value="Elevated hip left"> Elevated hip left</label>
+          <label class="checkbox-item"><input type="checkbox" value="Normal"> Normal</label>
+        </div>
+
+        <div class="section-divider" style="margin-top:20px;">Muscle Tension</div>
+        <div class="checkbox-grid" id="muscle-tension">
+          <label class="checkbox-item"><input type="checkbox" value="Cervical paraspinals"> Cervical paraspinals</label>
+          <label class="checkbox-item"><input type="checkbox" value="Thoracic paraspinals"> Thoracic paraspinals</label>
+          <label class="checkbox-item"><input type="checkbox" value="Lumbar paraspinals"> Lumbar paraspinals</label>
+          <label class="checkbox-item"><input type="checkbox" value="Trapezius right"> Trapezius right</label>
+          <label class="checkbox-item"><input type="checkbox" value="Trapezius left"> Trapezius left</label>
+          <label class="checkbox-item"><input type="checkbox" value="Quadratus lumborum right"> QL right</label>
+          <label class="checkbox-item"><input type="checkbox" value="Quadratus lumborum left"> QL left</label>
+          <label class="checkbox-item"><input type="checkbox" value="Piriformis right"> Piriformis right</label>
+          <label class="checkbox-item"><input type="checkbox" value="Piriformis left"> Piriformis left</label>
+        </div>
+
+        <div class="section-divider" style="margin-top:20px;">Range of Motion — Restricted</div>
+        <div class="rom-group">
+          <div class="rom-label">Cervical</div>
+          <div class="checkbox-grid" id="rom-cervical">
+            <label class="checkbox-item"><input type="checkbox" value="Cervical Flexion"> Flexion</label>
+            <label class="checkbox-item"><input type="checkbox" value="Cervical Extension"> Extension</label>
+            <label class="checkbox-item"><input type="checkbox" value="Cervical Right rotation"> Right rotation</label>
+            <label class="checkbox-item"><input type="checkbox" value="Cervical Left rotation"> Left rotation</label>
+            <label class="checkbox-item"><input type="checkbox" value="Cervical Right lateral flexion"> Right lateral flexion</label>
+            <label class="checkbox-item"><input type="checkbox" value="Cervical Left lateral flexion"> Left lateral flexion</label>
+          </div>
+        </div>
+        <div class="rom-group" style="margin-top:12px;">
+          <div class="rom-label">Lumbar</div>
+          <div class="checkbox-grid" id="rom-lumbar">
+            <label class="checkbox-item"><input type="checkbox" value="Lumbar Flexion"> Flexion</label>
+            <label class="checkbox-item"><input type="checkbox" value="Lumbar Extension"> Extension</label>
+            <label class="checkbox-item"><input type="checkbox" value="Lumbar Right rotation"> Right rotation</label>
+            <label class="checkbox-item"><input type="checkbox" value="Lumbar Left rotation"> Left rotation</label>
+            <label class="checkbox-item"><input type="checkbox" value="Lumbar Right lateral flexion"> Right lateral flexion</label>
+            <label class="checkbox-item"><input type="checkbox" value="Lumbar Left lateral flexion"> Left lateral flexion</label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 5. ASSESSMENT — SUBLUXATIONS ── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="section-icon">🦴</span> Assessment — Subluxation Levels (A)
+        <span class="section-badge">STEP 5</span>
+      </div>
+      <div class="card-body">
+
+        <div class="sublux-section">
+          <div class="sublux-label">Cervical Spine</div>
+          <div class="spine-grid" id="grid-cervical"></div>
+        </div>
+        <div class="sublux-section">
+          <div class="sublux-label">Thoracic Spine</div>
+          <div class="spine-grid" id="grid-thoracic"></div>
+        </div>
+        <div class="sublux-section">
+          <div class="sublux-label">Lumbar Spine</div>
+          <div class="spine-grid" id="grid-lumbar"></div>
+        </div>
+        <div class="sublux-section">
+          <div class="sublux-label">Pelvis / Sacrum</div>
+          <div class="spine-grid" id="grid-pelvis"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 6. TECHNIQUES USED ── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="section-icon">🤲</span> Techniques Used
+        <span class="section-badge">STEP 6</span>
+      </div>
+      <div class="card-body">
+        <div class="checkbox-grid" id="techniques">
+          <label class="checkbox-item"><input type="checkbox" value="Diversified"> Diversified</label>
+          <label class="checkbox-item"><input type="checkbox" value="Gonstead"> Gonstead</label>
+          <label class="checkbox-item"><input type="checkbox" value="Pierce-Stillwagon"> Pierce-Stillwagon</label>
+          <label class="checkbox-item"><input type="checkbox" value="Pettibon"> Pettibon</label>
+          <label class="checkbox-item"><input type="checkbox" value="Drop table"> Drop table</label>
+          <label class="checkbox-item"><input type="checkbox" value="Activator"> Activator</label>
+          <label class="checkbox-item"><input type="checkbox" value="SOT"> SOT</label>
+          <label class="checkbox-item"><input type="checkbox" value="Cox flexion-distraction"> Cox flexion-distraction</label>
+          <label class="checkbox-item"><input type="checkbox" value="Soft tissue"> Soft tissue</label>
+          <label class="checkbox-item" id="other-tech-item"><input type="checkbox" value="Other" onchange="toggleOtherTech(this)"> Other</label>
+        </div>
+        <div style="margin-top:12px;display:none;" id="other-tech-field">
+          <input type="text" id="other-tech-text" class="form-control" placeholder="Specify other technique...">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 7. PLAN ── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="section-icon">📅</span> Plan (P)
+        <span class="section-badge">STEP 7</span>
+      </div>
+      <div class="card-body">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Next Visit Recommendation</label>
+            <select id="next-visit" class="form-control">
+              <option value="">Select...</option>
+              <option>1 day</option>
+              <option>2 days</option>
+              <option>3 days</option>
+              <option>1 week</option>
+              <option>2 weeks</option>
+              <option>1 month</option>
+              <option>As needed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Treatment Plan Type</label>
+            <select id="plan-type" class="form-control">
+              <option value="">Select...</option>
+              <option>Acute care (3x/week)</option>
+              <option>Sub-acute (2x/week)</option>
+              <option>Maintenance (1x/week)</option>
+              <option>Wellness (monthly)</option>
+              <option>Custom</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section-divider" style="margin-top:18px;">Additional Plan Notes</div>
+        <div class="voice-row">
+          <textarea id="plan-notes" placeholder="Home instructions, exercises, lifestyle recommendations, referrals, follow-up plan..."></textarea>
+          <button class="btn-voice" id="voice-plan" onclick="toggleVoice('plan-notes','voice-plan')" title="Voice dictation">
+            🎤
+            <span id="voice-plan-lbl">DICTATE</span>
+          </button>
+        </div>
+        <div id="voice-plan-status" style="font-size:0.78rem;color:var(--gray-400);margin-top:4px;"></div>
+
+        <div class="section-divider" style="margin-top:18px;">Doctor Signature</div>
+        <div class="form-grid">
+          <div>
+            <div class="sig-container">
+              <canvas id="sig-canvas" width="600" height="130"></canvas>
+            </div>
+            <div class="sig-toolbar">
+              <button class="btn btn-secondary btn-sm" onclick="clearSig()">Clear Signature</button>
+              <span class="sig-hint">Sign above with mouse or touch</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date Signed</label>
+            <input type="text" id="date-signed" class="form-control" readonly>
+            <div style="margin-top:12px;">
+              <label class="form-label">Doctor Name / Credentials</label>
+              <input type="text" id="doctor-name" class="form-control" placeholder="e.g. Dr. Jane Smith, DC">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── ACTION BAR ── -->
+    <div class="action-bar">
+      <button class="btn btn-success" onclick="saveNote()">💾 Save Note</button>
+      <button class="btn btn-accent" onclick="exportPDF()">🖨️ Export PDF</button>
+      <button class="btn btn-danger" onclick="confirmClear()">🗑️ Clear Form</button>
+    </div>
+
+    <!-- ── 8. PATIENT HISTORY TIMELINE ── -->
+    <div class="card" id="history-section" style="margin-top:24px;">
+      <div class="card-header">
+        <span class="section-icon">📊</span> Patient Visit History
+        <span class="section-badge" id="history-count-badge">0 VISITS</span>
+      </div>
+      <div class="card-body" id="history-body">
+        <div class="history-empty">No visit history found for this patient.</div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ═══════════════════════════════════════════════════════════
+const CORRECT_PIN = '1234';
+const REMEMBER_DAYS = 30;
+let pinBuffer = '';
+let currentPatient = null;
+let sigDrawing = false;
+let sigLastX = 0, sigLastY = 0;
+let activeVoice = {};       // { textareaId: SpeechRecognition instance }
+let speechSupported = ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+// ═══════════════════════════════════════════════════════════
+//  PIN LOGIC
+// ═══════════════════════════════════════════════════════════
+function checkDeviceRemember() {
+  const saved = localStorage.getItem('soap_device_auth');
+  if (!saved) return false;
+  const { ts } = JSON.parse(saved);
+  return (Date.now() - ts) < (REMEMBER_DAYS * 86400 * 1000);
+}
+
+function pinKey(d) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  updateDots();
+  if (pinBuffer.length === 4) setTimeout(pinSubmit, 200);
+}
+
+function pinClear() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updateDots();
+  document.getElementById('pin-error').textContent = '';
+}
+
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('dot-' + i).classList.toggle('filled', i < pinBuffer.length);
+  }
+}
+
+function pinSubmit() {
+  if (pinBuffer === CORRECT_PIN) {
+    if (document.getElementById('remember-device').checked) {
+      localStorage.setItem('soap_device_auth', JSON.stringify({ ts: Date.now() }));
+    }
+    document.getElementById('pin-overlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('pin-error').textContent = 'Incorrect PIN. Please try again.';
+    pinBuffer = '';
+    updateDots();
+    // shake animation
+    const box = document.getElementById('pin-box');
+    box.style.animation = 'none';
+    box.offsetHeight;
+    box.style.animation = 'shake 0.4s ease';
+  }
+}
+
+// Add shake keyframes dynamically
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = '@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}';
+document.head.appendChild(shakeStyle);
+
+// Keyboard PIN entry
+document.addEventListener('keydown', e => {
+  if (document.getElementById('pin-overlay').style.display === 'none') return;
+  if (e.key >= '0' && e.key <= '9') pinKey(e.key);
+  else if (e.key === 'Backspace') pinClear();
+  else if (e.key === 'Enter') pinSubmit();
+});
+
+function lockApp() {
+  localStorage.removeItem('soap_device_auth');
+  document.getElementById('pin-overlay').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  pinBuffer = '';
+  updateDots();
+  document.getElementById('pin-error').textContent = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  APP INIT
+// ═══════════════════════════════════════════════════════════
+function initApp() {
+  // Set date/time
+  const now = new Date();
+  document.getElementById('visit-date').value = toDateInput(now);
+  document.getElementById('visit-time').value = toTimeInput(now);
+  document.getElementById('date-signed').value = now.toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('header-date').textContent = now.toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  buildSpineGrids();
+  initCheckboxes();
+  initRadios();
+  initSignatureCanvas();
+
+  if (!speechSupported) {
+    document.querySelectorAll('.btn-voice').forEach(b => {
+      b.title = 'Voice dictation not supported in this browser';
+      b.style.opacity = '0.4';
+      b.style.pointerEvents = 'none';
+    });
+  }
+}
+
+function toDateInput(d) {
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function toTimeInput(d) {
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SPINE BUTTON GRIDS
+// ═══════════════════════════════════════════════════════════
+function buildSpineGrids() {
+  const regions = {
+    'grid-cervical': ['C1','C2','C3','C4','C5','C6','C7'],
+    'grid-thoracic': ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
+    'grid-lumbar':   ['L1','L2','L3','L4','L5'],
+    'grid-pelvis':   ['Sacrum','Right ilium','Left ilium','Coccyx']
+  };
+  for (const [id, levels] of Object.entries(regions)) {
+    const grid = document.getElementById(id);
+    levels.forEach(lvl => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'spine-btn';
+      btn.textContent = lvl;
+      btn.dataset.level = lvl;
+      btn.dataset.region = id;
+      btn.onclick = () => btn.classList.toggle('active');
+      grid.appendChild(btn);
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHECKBOX & RADIO STYLING
+// ═══════════════════════════════════════════════════════════
+function initCheckboxes() {
+  document.querySelectorAll('.checkbox-item').forEach(label => {
+    const cb = label.querySelector('input[type="checkbox"]');
+    if (!cb) return;
+    cb.addEventListener('change', () => label.classList.toggle('checked', cb.checked));
+  });
+}
+
+function initRadios() {
+  document.querySelectorAll('.radio-item').forEach(label => {
+    const rb = label.querySelector('input[type="radio"]');
+    if (!rb) return;
+    rb.addEventListener('change', () => {
+      document.querySelectorAll(`.radio-item input[name="${rb.name}"]`).forEach(r => {
+        r.closest('.radio-item').classList.toggle('selected', r === rb && rb.checked);
+      });
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PAIN SLIDER
+// ═══════════════════════════════════════════════════════════
+function updatePain(val) {
+  document.getElementById('pain-num').textContent = val;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  OTHER TECHNIQUE TOGGLE
+// ═══════════════════════════════════════════════════════════
+function toggleOtherTech(cb) {
+  document.getElementById('other-tech-field').style.display = cb.checked ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  VOICE DICTATION
+// ═══════════════════════════════════════════════════════════
+function toggleVoice(textareaId, btnId) {
+  if (!speechSupported) { showToast('Voice dictation not supported in this browser.','error'); return; }
+  if (activeVoice[textareaId]) {
+    activeVoice[textareaId].stop();
+    return;
+  }
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SpeechRec();
+  rec.lang = 'en-US';
+  rec.interimResults = true;
+  rec.continuous = true;
+  activeVoice[textareaId] = rec;
+
+  const btn = document.getElementById(btnId);
+  const lbl = document.getElementById(btnId + '-lbl');
+  const status = document.getElementById(btnId + '-status');
+  btn.classList.add('recording');
+  if (lbl) lbl.textContent = 'STOP';
+  if (status) status.textContent = '🔴 Recording... speak now';
+
+  const ta = document.getElementById(textareaId);
+  const baseText = ta.value;
+  let interimText = '';
+
+  rec.onresult = e => {
+    let interim = '';
+    let final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t + ' ';
+      else interim += t;
+    }
+    interimText += final;
+    ta.value = baseText + (baseText && interimText ? '\n' : '') + interimText + interim;
+  };
+
+  rec.onerror = err => {
+    console.warn('Speech error:', err.error);
+    stopVoice(textareaId, btnId);
+    if (status) status.textContent = 'Error: ' + err.error;
+  };
+
+  rec.onend = () => stopVoice(textareaId, btnId);
+  rec.start();
+}
+
+function stopVoice(textareaId, btnId) {
+  if (activeVoice[textareaId]) {
+    try { activeVoice[textareaId].stop(); } catch(e) {}
+    delete activeVoice[textareaId];
+  }
+  const btn = document.getElementById(btnId);
+  const lbl = document.getElementById(btnId + '-lbl');
+  const status = document.getElementById(btnId + '-status');
+  if (btn) btn.classList.remove('recording');
+  if (lbl) lbl.textContent = 'DICTATE';
+  if (status) status.textContent = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SIGNATURE CANVAS
+// ═══════════════════════════════════════════════════════════
+function initSignatureCanvas() {
+  const canvas = document.getElementById('sig-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#1a2b5e';
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if (e.touches) {
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  }
+
+  function startDraw(e) {
+    sigDrawing = true;
+    const p = getPos(e);
+    sigLastX = p.x; sigLastY = p.y;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    e.preventDefault();
+  }
+  function draw(e) {
+    if (!sigDrawing) return;
+    const p = getPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    sigLastX = p.x; sigLastY = p.y;
+    e.preventDefault();
+  }
+  function stopDraw() { sigDrawing = false; }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', stopDraw);
+  canvas.addEventListener('mouseleave', stopDraw);
+  canvas.addEventListener('touchstart', startDraw, {passive:false});
+  canvas.addEventListener('touchmove', draw, {passive:false});
+  canvas.addEventListener('touchend', stopDraw);
+}
+
+function clearSig() {
+  const canvas = document.getElementById('sig-canvas');
+  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PATIENT SEARCH
+// ═══════════════════════════════════════════════════════════
+function getAllPatients() {
+  // Read from intake.html localStorage keys
+  const pts = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    // intake.html stores patients as 'patient_<id>' or 'chiro_patient_<id>'
+    if (key.startsWith('patient_') || key.startsWith('chiro_patient_')) {
+      try {
+        const p = JSON.parse(localStorage.getItem(key));
+        if (p && (p.firstName || p.lastName || p.name)) pts.push(p);
+      } catch(e) {}
+    }
+  }
+  // Also check 'chiro_patients' array
+  try {
+    const arr = JSON.parse(localStorage.getItem('chiro_patients') || '[]');
+    arr.forEach(p => { if (!pts.find(x => x.id === p.id)) pts.push(p); });
+  } catch(e) {}
+  return pts;
+}
+
+function searchPatients() {
+  const q = document.getElementById('pt-search').value.trim().toLowerCase();
+  const resultsDiv = document.getElementById('search-results');
+  if (!q) { resultsDiv.style.display = 'none'; return; }
+
+  const patients = getAllPatients();
+  const matches = patients.filter(p => {
+    const name = ((p.firstName||'') + ' ' + (p.lastName||'') + ' ' + (p.name||'')).toLowerCase();
+    const phone = (p.phone || p.phoneNumber || '').replace(/\D/g,'');
+    const qClean = q.replace(/\D/g,'');
+    return name.includes(q) || (qClean && phone.includes(qClean));
+  });
+
+  if (!matches.length) {
+    resultsDiv.innerHTML = '<div style="padding:12px 16px;color:var(--gray-400);font-size:0.88rem;">No patients found. Use Quick Entry below to create a record.</div>';
+    resultsDiv.style.display = 'block';
+    return;
+  }
+
+  resultsDiv.innerHTML = matches.map(p => {
+    const name = p.name || ((p.firstName||'') + ' ' + (p.lastName||'')).trim() || 'Unknown';
+    const phone = p.phone || p.phoneNumber || '—';
+    const dob = p.dob || p.dateOfBirth || '—';
+    const visits = getSoapNotesForPatient(p.id || p.patientId || name).length;
+    return `<div class="search-result-item" onclick='selectPatient(${JSON.stringify(p)})'>
+      <div>
+        <div class="result-name">${name}</div>
+        <div class="result-detail">DOB: ${dob} &nbsp;|&nbsp; Phone: ${phone}</div>
+      </div>
+      <span class="result-visits">${visits} visit${visits!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  resultsDiv.style.display = 'block';
+}
+
+function selectPatient(p) {
+  currentPatient = p;
+  const name = p.name || ((p.firstName||'') + ' ' + (p.lastName||'')).trim() || 'Unknown';
+  const id = p.id || p.patientId || slugify(name);
+  document.getElementById('pt-name').value = name;
+  document.getElementById('pt-dob').value = p.dob || p.dateOfBirth || '';
+  document.getElementById('pt-phone').value = p.phone || p.phoneNumber || '';
+  document.getElementById('pt-id').value = id;
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('pt-search').value = '';
+
+  // Auto-increment visit number
+  const notes = getSoapNotesForPatient(id);
+  document.getElementById('visit-num').value = '#' + (notes.length + 1);
+
+  // Load history
+  loadPatientHistory(id, name);
+  showToast('Patient loaded: ' + name, 'success');
+}
+
+function slugify(s) {
+  return s.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  QUICK ENTRY
+// ═══════════════════════════════════════════════════════════
+function toggleQuickEntry() {
+  const qe = document.getElementById('quick-entry');
+  qe.style.display = qe.style.display === 'none' || !qe.style.display ? 'block' : 'none';
+}
+
+function createQuickPatient() {
+  const fn = document.getElementById('quick-fname').value.trim();
+  const ln = document.getElementById('quick-lname').value.trim();
+  const ph = document.getElementById('quick-phone').value.trim();
+  if (!fn && !ln) { showToast('Please enter at least a first or last name.','error'); return; }
+  const name = (fn + ' ' + ln).trim();
+  const id = slugify(name) + '_' + Date.now();
+  const p = { id, name, firstName: fn, lastName: ln, phone: ph, dob: '', createdAt: new Date().toISOString() };
+  localStorage.setItem('chiro_patient_' + id, JSON.stringify(p));
+  // Also add to array
+  try {
+    const arr = JSON.parse(localStorage.getItem('chiro_patients') || '[]');
+    arr.push(p);
+    localStorage.setItem('chiro_patients', JSON.stringify(arr));
+  } catch(e) {}
+  selectPatient(p);
+  document.getElementById('quick-entry').style.display = 'none';
+  document.getElementById('quick-fname').value = '';
+  document.getElementById('quick-lname').value = '';
+  document.getElementById('quick-phone').value = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SOAP NOTE STORAGE
+// ═══════════════════════════════════════════════════════════
+function getSoapNotesForPatient(pid) {
+  const notes = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('soap_' + pid + '_')) {
+      try { notes.push(JSON.parse(localStorage.getItem(key))); } catch(e) {}
+    }
+  }
+  notes.sort((a,b) => new Date(b.savedAt) - new Date(a.savedAt));
+  return notes;
+}
+
+function collectFormData() {
+  // Checkboxes
+  function getChecked(groupId) {
+    return Array.from(document.querySelectorAll('#'+groupId+' input[type="checkbox"]:checked')).map(c=>c.value);
+  }
+  // Radio
+  function getRadio(name) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : '';
+  }
+  // Spine buttons
+  function getSpine(gridId) {
+    return Array.from(document.querySelectorAll('#'+gridId+' .spine-btn.active')).map(b=>b.dataset.level);
+  }
+  // Techniques - handle 'Other' with text
+  let techs = getChecked('techniques');
+  const otherIdx = techs.indexOf('Other');
+  if (otherIdx !== -1) {
+    const otherText = document.getElementById('other-tech-text').value.trim();
+    if (otherText) techs[otherIdx] = 'Other: ' + otherText;
+  }
+
+  return {
+    patientId: document.getElementById('pt-id').value,
+    patientName: document.getElementById('pt-name').value,
+    dob: document.getElementById('pt-dob').value,
+    phone: document.getElementById('pt-phone').value,
+    visitDate: document.getElementById('visit-date').value,
+    visitTime: document.getElementById('visit-time').value,
+    visitNum: document.getElementById('visit-num').value,
+    office: document.getElementById('office-select').value,
+    // Subjective
+    chiefComplaint: getChecked('chief-complaint'),
+    painScale: document.getElementById('pain-slider').value,
+    comparedToLast: getRadio('compared'),
+    subjNotes: document.getElementById('subj-notes').value,
+    // Objective
+    posture: getChecked('posture-findings'),
+    muscleTension: getChecked('muscle-tension'),
+    romCervical: getChecked('rom-cervical'),
+    romLumbar: getChecked('rom-lumbar'),
+    // Assessment
+    cervical: getSpine('grid-cervical'),
+    thoracic: getSpine('grid-thoracic'),
+    lumbar: getSpine('grid-lumbar'),
+    pelvis: getSpine('grid-pelvis'),
+    // Techniques
+    techniques: techs,
+    // Plan
+    nextVisit: document.getElementById('next-visit').value,
+    planType: document.getElementById('plan-type').value,
+    planNotes: document.getElementById('plan-notes').value,
+    doctorName: document.getElementById('doctor-name').value,
+    dateSigned: document.getElementById('date-signed').value,
+    signature: document.getElementById('sig-canvas').toDataURL(),
+    savedAt: new Date().toISOString()
+  };
+}
+
+function saveNote() {
+  const data = collectFormData();
+  if (!data.patientId) { showToast('Please select or create a patient first.','error'); return; }
+  if (!data.visitDate) { showToast('Please enter a visit date.','error'); return; }
+
+  const key = 'soap_' + data.patientId + '_' + Date.now();
+  localStorage.setItem(key, JSON.stringify(data));
+
+  // Update visit number for next
+  const notes = getSoapNotesForPatient(data.patientId);
+  document.getElementById('visit-num').value = '#' + (notes.length + 1);
+
+  loadPatientHistory(data.patientId, data.patientName);
+  showToast('SOAP note saved successfully!', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PATIENT HISTORY TIMELINE
+// ═══════════════════════════════════════════════════════════
+function loadPatientHistory(pid, name) {
+  const notes = getSoapNotesForPatient(pid);
+  const section = document.getElementById('history-section');
+  const body = document.getElementById('history-body');
+  const badge = document.getElementById('history-count-badge');
+
+  section.style.display = 'block';
+  badge.textContent = notes.length + ' VISIT' + (notes.length!==1?'S':'');
+
+  if (!notes.length) {
+    body.innerHTML = '<div class="history-empty">No visit history found for this patient.</div>';
+    return;
+  }
+
+  body.innerHTML = notes.map((n, idx) => {
+    const vn = n.visitNum || ('#' + (notes.length - idx));
+    const dateStr = n.visitDate ? new Date(n.visitDate + 'T12:00:00').toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : 'Unknown date';
+    const sublux = [...(n.cervical||[]), ...(n.thoracic||[]), ...(n.lumbar||[]), ...(n.pelvis||[])];
+    return `<div class="visit-card">
+      <div class="visit-card-header" onclick="toggleVisitCard(this)">
+        <div class="visit-num">${vn.replace('#','')}</div>
+        <div>
+          <div class="visit-date">${dateStr}</div>
+          <div style="font-size:0.78rem;color:var(--gray-400);">${n.office||''}</div>
+        </div>
+        <div class="visit-tags">
+          <span class="visit-tag visit-pain-tag">Pain: ${n.painScale}/10</span>
+          ${sublux.length ? '<span class="visit-tag">'+sublux.join(', ')+'</span>' : ''}
+          ${(n.techniques||[]).length ? '<span class="visit-tag" style="background:#e9d8fd;color:#553c9a;">'+(n.techniques||[]).join(', ')+'</span>' : ''}
+        </div>
+        <span class="visit-expand">▼</span>
+      </div>
+      <div class="visit-body">
+        <dl>
+          <dt>Chief Complaint</dt><dd>${(n.chiefComplaint||[]).join(', ')||'—'}</dd>
+          <dt>Compared to Last Visit</dt><dd>${n.comparedToLast||'—'}</dd>
+          <dt>Subjective Notes</dt><dd>${n.subjNotes||'—'}</dd>
+          <dt>Posture</dt><dd>${(n.posture||[]).join(', ')||'—'}</dd>
+          <dt>Muscle Tension</dt><dd>${(n.muscleTension||[]).join(', ')||'—'}</dd>
+          <dt>ROM Restricted</dt><dd>${[...(n.romCervical||[]),(n.romLumbar||[])].join(', ')||'—'}</dd>
+          <dt>Subluxations</dt><dd>${sublux.join(', ')||'—'}</dd>
+          <dt>Techniques</dt><dd>${(n.techniques||[]).join(', ')||'—'}</dd>
+          <dt>Next Visit</dt><dd>${n.nextVisit||'—'}</dd>
+          <dt>Treatment Plan</dt><dd>${n.planType||'—'}</dd>
+          <dt>Plan Notes</dt><dd>${n.planNotes||'—'}</dd>
+          <dt>Doctor</dt><dd>${n.doctorName||'—'}</dd>
+          <dt>Saved At</dt><dd>${new Date(n.savedAt).toLocaleString()}</dd>
+        </dl>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleVisitCard(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.visit-expand');
+  body.classList.toggle('open');
+  arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CLEAR FORM
+// ═══════════════════════════════════════════════════════════
+function clearForm() {
+  currentPatient = null;
+  document.getElementById('pt-name').value = '';
+  document.getElementById('pt-dob').value = '';
+  document.getElementById('pt-phone').value = '';
+  document.getElementById('pt-id').value = '';
+  document.getElementById('visit-num').value = '';
+  document.getElementById('office-select').value = '';
+  document.getElementById('pain-slider').value = 5;
+  updatePain(5);
+  document.getElementById('subj-notes').value = '';
+  document.getElementById('plan-notes').value = '';
+  document.getElementById('next-visit').value = '';
+  document.getElementById('plan-type').value = '';
+  document.getElementById('doctor-name').value = '';
+  document.getElementById('other-tech-text').value = '';
+  document.getElementById('other-tech-field').style.display = 'none';
+
+  // Uncheck all checkboxes
+  document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.checkbox-item').classList.remove('checked');
+  });
+  // Unselect radios
+  document.querySelectorAll('.radio-item input[type="radio"]').forEach(rb => {
+    rb.checked = false;
+    rb.closest('.radio-item').classList.remove('selected');
+  });
+  // Deactivate spine buttons
+  document.querySelectorAll('.spine-btn.active').forEach(b => b.classList.remove('active'));
+  // Clear signature
+  clearSig();
+  // Reset dates
+  const now = new Date();
+  document.getElementById('visit-date').value = toDateInput(now);
+  document.getElementById('visit-time').value = toTimeInput(now);
+  document.getElementById('date-signed').value = now.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  // Hide history
+  document.getElementById('history-section').style.display = 'none';
+}
+
+function confirmClear() {
+  if (confirm('Clear all form data? This will reset the current SOAP note (saved notes are preserved).')) {
+    clearForm();
+    showToast('Form cleared.');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORT PDF
+// ═══════════════════════════════════════════════════════════
+function exportPDF() {
+  window.print();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type ? ' '+type : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = '', 3200);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  if (checkDeviceRemember()) {
+    document.getElementById('pin-overlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  }
+});
+</script>
+</body>
+</html>

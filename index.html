@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dr. Alan Hiatt, DC | Practice Management</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #1a2b5e;
+      --navy-dark:  #111e45;
+      --navy-light: #243575;
+      --gold:       #c8a84b;
+      --gold-light: #e0c068;
+      --white:      #ffffff;
+      --off-white:  #f4f6fb;
+      --text-muted: #6b7a99;
+      --card-border:#dde3f0;
+      --shadow:     0 4px 20px rgba(26,43,94,0.10);
+      --radius:     12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--off-white);
+      color: #1e2a45;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ─────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--navy-light) 100%);
+      color: var(--white);
+      padding: 0 24px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 46px;
+      height: 46px;
+      background: var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: var(--navy-dark);
+      flex-shrink: 0;
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      font-size: 0.72rem;
+      opacity: 0.75;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .clock-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    #clock-time {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--gold-light);
+      font-variant-numeric: tabular-nums;
+    }
+
+    #clock-date {
+      font-size: 0.68rem;
+      opacity: 0.7;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ── NAV ─────────────────────────────────────────── */
+    nav {
+      background: var(--navy-dark);
+      border-bottom: 2px solid var(--gold);
+    }
+
+    .nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .nav-inner::-webkit-scrollbar { display: none; }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 13px 20px;
+      color: rgba(255,255,255,0.78);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transition: background 0.18s, color 0.18s;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+
+    nav a:hover, nav a.active {
+      background: rgba(255,255,255,0.07);
+      color: var(--gold-light);
+      border-bottom-color: var(--gold-light);
+    }
+
+    nav a i { font-size: 0.9rem; }
+
+    /* ── MAIN ─────────────────────────────────────────── */
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    /* ── PAGE TITLE ──────────────────────────────────── */
+    .page-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .page-title h2 {
+      font-size: 1.4rem;
+      color: var(--navy);
+      font-weight: 700;
+    }
+
+    .page-title span {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--white);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 5px 14px;
+    }
+
+    /* ── OFFICES GRID ────────────────────────────────── */
+    .offices-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+
+    @media (max-width: 720px) {
+      .offices-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── OFFICE CARD ─────────────────────────────────── */
+    .office-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--card-border);
+      overflow: hidden;
+    }
+
+    .office-header {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: var(--white);
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .office-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .office-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--gold-light);
+    }
+
+    .office-header h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .office-header p {
+      font-size: 0.72rem;
+      opacity: 0.72;
+      margin-top: 2px;
+    }
+
+    .office-badge {
+      background: var(--gold);
+      color: var(--navy-dark);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .office-body {
+      padding: 22px;
+    }
+
+    /* ── STAT ROW ────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--off-white);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-card .stat-icon {
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1;
+    }
+
+    .stat-card .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-top: 4px;
+    }
+
+    .stat-card.revenue .stat-value { color: #1a7a4a; }
+    .stat-card.revenue .stat-icon { color: #1a7a4a; }
+    .stat-card.appts .stat-icon { color: var(--navy); }
+
+    /* ── ACTION BUTTONS ──────────────────────────────── */
+    .office-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      transition: all 0.18s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background: var(--navy-light);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(26,43,94,0.25);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--navy);
+      border: 1.5px solid var(--card-border);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--navy);
+      background: var(--off-white);
+      transform: translateY(-1px);
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: var(--navy-dark);
+    }
+
+    .btn-gold:hover {
+      background: var(--gold-light);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(200,168,75,0.35);
+    }
+
+    .btn i { font-size: 0.85rem; }
+
+    /* ── QUICK ACTIONS PANEL ─────────────────────────── */
+    .quick-panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--card-border);
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .quick-panel h3 {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quick-panel h3::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--card-border);
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .quick-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px 12px;
+      border-radius: 10px;
+      background: var(--off-white);
+      border: 1.5px solid var(--card-border);
+      color: var(--navy);
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 0.02em;
+      transition: all 0.18s;
+    }
+
+    .quick-btn:hover {
+      background: var(--navy);
+      color: var(--white);
+      border-color: var(--navy);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(26,43,94,0.2);
+    }
+
+    .quick-btn i {
+      font-size: 1.5rem;
+    }
+
+    .quick-btn:hover i { color: var(--gold-light); }
+
+    /* ── FOOTER ──────────────────────────────────────── */
+    footer {
+      background: var(--navy-dark);
+      color: rgba(255,255,255,0.55);
+      text-align: center;
+      padding: 18px 20px;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+    }
+
+    footer span { color: var(--gold); }
+
+    /* ── NOTIFICATION BANNER ─────────────────────────── */
+    #notif-banner {
+      display: none;
+      background: #e8f5e9;
+      border-left: 4px solid #2e7d32;
+      color: #1b5e20;
+      padding: 10px 20px;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    /* ── RESPONSIVE TWEAKS ───────────────────────────── */
+    @media (max-width: 560px) {
+      .header-inner { height: auto; padding: 12px 0; flex-wrap: wrap; }
+      .clock-box { align-items: flex-start; }
+      .office-actions { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      nav a { padding: 11px 14px; font-size: 0.75rem; }
+      nav a span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NOTIFICATION BANNER -->
+<div id="notif-banner">
+  <i class="fa fa-circle-check"></i> <span id="notif-msg"></span>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon"><i class="fa fa-bone"></i></div>
+      <div class="brand-text">
+        <h1>Dr. Alan Hiatt, DC</h1>
+        <p>Chiropractic Practice Management</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="clock-box">
+        <div id="clock-time">--:-- --</div>
+        <div id="clock-date">Loading...</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="active"><i class="fa fa-house"></i> <span>Home</span></a>
+    <a href="intake.html"><i class="fa fa-clipboard-list"></i> <span>Intake</span></a>
+    <a href="checkin.html"><i class="fa fa-badge-check"></i> <span>Check-In</span></a>
+    <a href="schedule.html"><i class="fa fa-calendar-days"></i> <span>Schedule</span></a>
+    <a href="soap.html"><i class="fa fa-notes-medical"></i> <span>SOAP Notes</span></a>
+    <a href="dashboard.html"><i class="fa fa-chart-line"></i> <span>Dashboard</span></a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <!-- PAGE TITLE -->
+  <div class="page-title">
+    <h2><i class="fa fa-house-medical" style="color:var(--navy);margin-right:8px;"></i>Office Overview</h2>
+    <span id="today-label">Loading date...</span>
+  </div>
+
+  <!-- OFFICES GRID -->
+  <div class="offices-grid">
+
+    <!-- ROGERS OFFICE -->
+    <div class="office-card">
+      <div class="office-header">
+        <div class="office-header-left">
+          <div class="office-icon"><i class="fa fa-location-dot"></i></div>
+          <div>
+            <h3>Rogers Office</h3>
+            <p>Rogers, Arkansas</p>
+          </div>
+        </div>
+        <div class="office-badge">Location 1</div>
+      </div>
+      <div class="office-body">
+        <div class="stats-row">
+          <div class="stat-card appts">
+            <div class="stat-icon"><i class="fa fa-user-injured"></i></div>
+            <div class="stat-value" id="rogers-appts">0</div>
+            <div class="stat-label">Today's Appointments</div>
+          </div>
+          <div class="stat-card revenue">
+            <div class="stat-icon"><i class="fa fa-dollar-sign"></i></div>
+            <div class="stat-value" id="rogers-revenue">$0</div>
+            <div class="stat-label">Today's Revenue</div>
+          </div>
+        </div>
+        <div class="office-actions">
+          <a href="checkin.html?office=rogers" class="btn btn-primary"><i class="fa fa-badge-check"></i> Check-In</a>
+          <a href="intake.html?office=rogers" class="btn btn-outline"><i class="fa fa-clipboard-list"></i> New Patient</a>
+          <a href="schedule.html?office=rogers" class="btn btn-outline"><i class="fa fa-calendar-days"></i> Schedule</a>
+          <a href="soap.html?office=rogers" class="btn btn-outline"><i class="fa fa-notes-medical"></i> SOAP Note</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- EUREKA SPRINGS OFFICE -->
+    <div class="office-card">
+      <div class="office-header">
+        <div class="office-header-left">
+          <div class="office-icon"><i class="fa fa-location-dot"></i></div>
+          <div>
+            <h3>Eureka Springs Office</h3>
+            <p>Eureka Springs, Arkansas</p>
+          </div>
+        </div>
+        <div class="office-badge">Location 2</div>
+      </div>
+      <div class="office-body">
+        <div class="stats-row">
+          <div class="stat-card appts">
+            <div class="stat-icon"><i class="fa fa-user-injured"></i></div>
+            <div class="stat-value" id="eureka-appts">0</div>
+            <div class="stat-label">Today's Appointments</div>
+          </div>
+          <div class="stat-card revenue">
+            <div class="stat-icon"><i class="fa fa-dollar-sign"></i></div>
+            <div class="stat-value" id="eureka-revenue">$0</div>
+            <div class="stat-label">Today's Revenue</div>
+          </div>
+        </div>
+        <div class="office-actions">
+          <a href="checkin.html?office=eureka" class="btn btn-primary"><i class="fa fa-badge-check"></i> Check-In</a>
+          <a href="intake.html?office=eureka" class="btn btn-outline"><i class="fa fa-clipboard-list"></i> New Patient</a>
+          <a href="schedule.html?office=eureka" class="btn btn-outline"><i class="fa fa-calendar-days"></i> Schedule</a>
+          <a href="soap.html?office=eureka" class="btn btn-outline"><i class="fa fa-notes-medical"></i> SOAP Note</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="quick-panel">
+    <h3><i class="fa fa-bolt" style="color:var(--gold);"></i> Quick Actions</h3>
+    <div class="quick-grid">
+      <a href="intake.html" class="quick-btn">
+        <i class="fa fa-user-plus"></i>
+        New Patient Intake
+      </a>
+      <a href="checkin.html" class="quick-btn">
+        <i class="fa fa-clipboard-check"></i>
+        Patient Check-In
+      </a>
+      <a href="schedule.html" class="quick-btn">
+        <i class="fa fa-calendar-plus"></i>
+        Book Appointment
+      </a>
+      <a href="soap.html" class="quick-btn">
+        <i class="fa fa-file-medical"></i>
+        SOAP Notes
+      </a>
+      <a href="dashboard.html" class="quick-btn">
+        <i class="fa fa-chart-bar"></i>
+        View Dashboard
+      </a>
+      <a href="dashboard.html#billing" class="quick-btn">
+        <i class="fa fa-receipt"></i>
+        Billing Summary
+      </a>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  &copy; <span id="footer-year"></span> <span>Dr. Alan Hiatt, DC</span> &mdash; Rogers &amp; Eureka Springs, Arkansas &mdash; All rights reserved.
+</footer>
+
+<script>
+  // ── CLOCK ────────────────────────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    const timeEl = document.getElementById('clock-time');
+    const dateEl = document.getElementById('clock-date');
+    const todayEl = document.getElementById('today-label');
+
+    let h = now.getHours();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    timeEl.textContent = `${h}:${mm}:${ss} ${ampm}`;
+
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+    dateEl.textContent = dateStr;
+    if (todayEl) todayEl.textContent = dateStr;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ── FOOTER YEAR ──────────────────────────────────────────────────────────
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+  // ── HELPERS ──────────────────────────────────────────────────────────────
+  function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function formatCurrency(n) {
+    return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  // ── LOAD STATS FROM LOCALSTORAGE ─────────────────────────────────────────
+  // Expected localStorage keys (set by other pages):
+  //   chiro_stats_rogers_YYYY-MM-DD   = { appointments: N, revenue: N }
+  //   chiro_stats_eureka_YYYY-MM-DD   = { appointments: N, revenue: N }
+  function loadStats() {
+    const key = todayKey();
+    const offices = ['rogers', 'eureka'];
+
+    offices.forEach(function(office) {
+      const stored = localStorage.getItem('chiro_stats_' + office + '_' + key);
+      let appts = 0;
+      let revenue = 0;
+
+      if (stored) {
+        try {
+          const data = JSON.parse(stored);
+          appts   = parseInt(data.appointments) || 0;
+          revenue = parseFloat(data.revenue)    || 0;
+        } catch(e) {}
+      }
+
+      // Also tally from appointments array if present
+      const apptRaw = localStorage.getItem('chiro_appointments_' + office + '_' + key);
+      if (apptRaw) {
+        try {
+          const apptArr = JSON.parse(apptRaw);
+          if (Array.isArray(apptArr)) {
+            appts   = apptArr.length;
+            revenue = apptArr.reduce(function(sum, a) { return sum + (parseFloat(a.charge) || 0); }, 0);
+          }
+        } catch(e) {}
+      }
+
+      document.getElementById(office + '-appts').textContent   = appts;
+      document.getElementById(office + '-revenue').textContent = formatCurrency(revenue);
+    });
+  }
+
+  loadStats();
+
+  // Re-check every 60 seconds in case another tab updates data
+  setInterval(loadStats, 60000);
+
+  // Listen for cross-tab storage changes
+  window.addEventListener('storage', function(e) {
+    if (e.key && e.key.startsWith('chiro_')) loadStats();
+  });
+
+  // ── ACTIVE NAV ───────────────────────────────────────────────────────────
+  (function() {
+    const path = window.location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('nav a').forEach(function(a) {
+      const href = a.getAttribute('href').split('?')[0];
+      if (href === path) a.classList.add('active');
+      else a.classList.remove('active');
+    });
+  })();
+</script>
+</body>
+</html>

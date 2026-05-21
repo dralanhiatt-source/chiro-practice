@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Patient Check-In | Chiropractic Office</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #1a2b5e;
+      --navy-dark: #111d42;
+      --navy-light: #2a3f8f;
+      --white: #ffffff;
+      --gray-light: #f4f6fa;
+      --gray-mid: #dde2ee;
+      --gray-text: #5a6380;
+      --accent: #4a90d9;
+      --accent-hover: #357abf;
+      --green: #28a745;
+      --green-hover: #1e8836;
+      --red: #dc3545;
+      --touch-min: 52px;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 18px rgba(26,43,94,0.13);
+      --shadow-lg: 0 8px 32px rgba(26,43,94,0.22);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--navy);
+      color: var(--navy);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    /* ── SCREEN SYSTEM ── */
+    .screen {
+      display: none;
+      min-height: 100vh;
+      width: 100%;
+    }
+    .screen.active { display: flex; flex-direction: column; }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--navy-dark);
+      color: var(--white);
+      padding: 20px 28px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+    .header-logo {
+      width: 48px; height: 48px;
+      background: var(--white);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .header-text h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: 0.02em; }
+    .header-text p  { font-size: 0.85rem; opacity: 0.75; margin-top: 2px; }
+    .header-office-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: var(--white);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      display: none;
+    }
+    .header-office-badge.visible { display: block; }
+
+    /* ── CONTENT AREA ── */
+    .content {
+      flex: 1;
+      background: var(--gray-light);
+      padding: 32px 24px 40px;
+      overflow-y: auto;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px 24px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--gray-mid);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title .icon { font-size: 1.3rem; }
+
+    /* ── SECTION HEADING ── */
+    .section-heading {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--navy);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--gray-text);
+      font-size: 0.92rem;
+      margin-bottom: 28px;
+    }
+
+    /* ── OFFICE BUTTONS ── */
+    .office-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+    .office-btn {
+      background: var(--white);
+      border: 3px solid var(--navy);
+      border-radius: var(--radius);
+      color: var(--navy);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 140px;
+      padding: 20px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      transition: background 0.18s, color 0.18s, transform 0.12s, box-shadow 0.18s;
+      user-select: none;
+    }
+    .office-btn:active { transform: scale(0.97); }
+    .office-btn .office-icon { font-size: 2.6rem; }
+    .office-btn:hover,
+    .office-btn.selected {
+      background: var(--navy);
+      color: var(--white);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* ── SEARCH ── */
+    .search-wrap { max-width: 520px; margin: 0 auto; }
+    .tabs {
+      display: flex;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      overflow: hidden;
+      border: 2px solid var(--gray-mid);
+      border-bottom: none;
+    }
+    .tab-btn {
+      flex: 1;
+      background: var(--gray-mid);
+      border: none;
+      padding: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--gray-text);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      min-height: var(--touch-min);
+    }
+    .tab-btn.active {
+      background: var(--navy);
+      color: var(--white);
+    }
+    .tab-content {
+      border: 2px solid var(--gray-mid);
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      padding: 20px;
+      background: var(--white);
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+    .search-input {
+      flex: 1;
+      border: 2px solid var(--gray-mid);
+      border-radius: var(--radius-sm);
+      font-size: 1.1rem;
+      padding: 14px 16px;
+      color: var(--navy);
+      outline: none;
+      transition: border-color 0.15s;
+      min-height: var(--touch-min);
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-btn {
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0 22px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: var(--touch-min);
+      min-width: 80px;
+      transition: background 0.15s;
+    }
+    .search-btn:hover { background: var(--navy-light); }
+    .search-btn:active { background: var(--navy-dark); }
+
+    /* ── SEARCH RESULT ── */
+    .search-result {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      display: none;
+    }
+    .search-result.not-found {
+      background: #fff3f3;
+      border: 2px solid var(--red);
+      color: var(--red);
+      display: block;
+    }
+    .search-result.found {
+      background: #f0fff4;
+      border: 2px solid var(--green);
+      color: #155724;
+      display: block;
+    }
+
+    /* ── WELCOME BANNER ── */
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: var(--white);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-lg);
+    }
+    .welcome-banner .wave { font-size: 2.2rem; margin-bottom: 6px; }
+    .welcome-banner h2 { font-size: 1.6rem; font-weight: 800; }
+    .welcome-banner p  { font-size: 0.9rem; opacity: 0.82; margin-top: 6px; }
+    .welcome-banner .visit-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.18);
+      border-radius: 20px;
+      padding: 5px 16px;
+      font-size: 0.82rem;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+
+    /* ── CHECKBOX GRID ── */
+    .check-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .check-grid.three-col { grid-template-columns: 1fr 1fr 1fr; }
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--gray-light);
+      border: 2px solid var(--gray-mid);
+      border-radius: var(--radius-sm);
+      padding: 13px 14px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--navy);
+      min-height: var(--touch-min);
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .check-label:hover { border-color: var(--accent); }
+    .check-label input[type="checkbox"] { display: none; }
+    .check-label .check-box {
+      width: 24px; height: 24px;
+      border: 2px solid var(--gray-mid);
+      border-radius: 5px;
+      background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .check-label input:checked ~ .check-box {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: var(--white);
+    }
+    .check-label:has(input:checked) {
+      border-color: var(--navy);
+      background: #eef1fb;
+    }
+
+    /* ── RADIO GRID ── */
+    .radio-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--gray-light);
+      border: 2px solid var(--gray-mid);
+      border-radius: var(--radius-sm);
+      padding: 13px 14px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--navy);
+      min-height: var(--touch-min);
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .radio-label:hover { border-color: var(--accent); }
+    .radio-label input[type="radio"] { display: none; }
+    .radio-dot {
+      width: 22px; height: 22px;
+      border: 2px solid var(--gray-mid);
+      border-radius: 50%;
+      background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+    .radio-dot::after {
+      content: '';
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: transparent;
+      transition: background 0.15s;
+    }
+    .radio-label input:checked ~ .radio-dot {
+      border-color: var(--navy);
+    }
+    .radio-label input:checked ~ .radio-dot::after {
+      background: var(--navy);
+    }
+    .radio-label:has(input:checked) {
+      border-color: var(--navy);
+      background: #eef1fb;
+    }
+
+    /* ── PAIN SLIDER ── */
+    .pain-slider-wrap { padding: 4px 0; }
+    .pain-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--gray-text);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .pain-value-display {
+      text-align: center;
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+    .pain-value-display .pain-label-text {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--gray-text);
+      margin-top: 4px;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 10px;
+      -webkit-appearance: none;
+      appearance: none;
+      border-radius: 5px;
+      background: linear-gradient(to right, var(--green) 0%, #ffc107 50%, var(--red) 100%);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 3px solid var(--white);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 3px solid var(--white);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+
+    /* ── ACTION BUTTONS ── */
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--green);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      min-height: 68px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      transition: background 0.15s, transform 0.12s;
+    }
+    .btn-primary:hover  { background: var(--green-hover); }
+    .btn-primary:active { transform: scale(0.98); background: var(--green-hover); }
+
+    .btn-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--white);
+      color: var(--navy);
+      border: 2px solid var(--navy);
+      border-radius: var(--radius);
+      font-size: 1.05rem;
+      font-weight: 700;
+      min-height: var(--touch-min);
+      width: 100%;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      margin-top: 12px;
+    }
+    .btn-secondary:hover  { background: var(--navy); color: var(--white); }
+    .btn-secondary:active { background: var(--navy-dark); color: var(--white); }
+
+    .btn-intake {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--accent);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1.15rem;
+      font-weight: 700;
+      min-height: 62px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: background 0.15s, transform 0.12s;
+      margin-top: 16px;
+    }
+    .btn-intake:hover  { background: var(--accent-hover); }
+    .btn-intake:active { transform: scale(0.98); }
+
+    /* ── NOT FOUND BOX ── */
+    .not-found-box {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .not-found-box .icon { font-size: 3rem; margin-bottom: 12px; }
+    .not-found-box h3 { font-size: 1.25rem; color: var(--navy); margin-bottom: 8px; }
+    .not-found-box p  { color: var(--gray-text); font-size: 0.92rem; line-height: 1.5; }
+
+    /* ── TOAST / SUCCESS ── */
+    .toast-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26,43,94,0.65);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+    .toast-overlay.show { display: flex; }
+    .toast-box {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
+      animation: popIn 0.25s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+    .toast-box .big-check { font-size: 4rem; margin-bottom: 14px; }
+    .toast-box h2 { color: var(--green); font-size: 1.6rem; margin-bottom: 8px; }
+    .toast-box p  { color: var(--gray-text); font-size: 0.95rem; line-height: 1.5; }
+
+    /* ── SPINNER ── */
+    .spinner {
+      display: inline-block;
+      width: 22px; height: 22px;
+      border: 3px solid rgba(255,255,255,0.4);
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── VALIDATION ── */
+    .field-error {
+      color: var(--red);
+      font-size: 0.83rem;
+      margin-top: 8px;
+      display: none;
+    }
+    .field-error.show { display: block; }
+
+    /* ── BACK BUTTON ── */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--gray-text);
+      font-size: 0.88rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 8px 0;
+      margin-bottom: 16px;
+      min-height: 44px;
+    }
+    .back-link:hover { color: var(--navy); }
+
+    /* ── DIVIDER ── */
+    .divider {
+      text-align: center;
+      color: var(--gray-text);
+      font-size: 0.82rem;
+      margin: 18px 0;
+      position: relative;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: var(--gray-mid);
+    }
+    .divider::before { left: 0; }
+    .divider::after  { right: 0; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 480px) {
+      .office-grid { grid-template-columns: 1fr; }
+      .check-grid  { grid-template-columns: 1fr; }
+      .check-grid.three-col { grid-template-columns: 1fr 1fr; }
+      .radio-grid  { grid-template-columns: 1fr; }
+      .content { padding: 20px 14px 36px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1 — SELECT OFFICE
+══════════════════════════════════════ -->
+<div id="screen-office" class="screen active">
+  <div class="header">
+    <div class="header-logo">🦴</div>
+    <div class="header-text">
+      <h1>Chiropractic Care</h1>
+      <p>Patient Check-In Kiosk</p>
+    </div>
+  </div>
+  <div class="content">
+    <div class="section-heading">Welcome!</div>
+    <div class="section-sub">Please select your office location to begin.</div>
+
+    <div class="office-grid">
+      <button class="office-btn" id="btn-rogers" onclick="selectOffice('Rogers')">
+        <span class="office-icon">📍</span>
+        <span>Rogers</span>
+      </button>
+      <button class="office-btn" id="btn-eureka" onclick="selectOffice('Eureka Springs')">
+        <span class="office-icon">📍</span>
+        <span>Eureka Springs</span>
+      </button>
+    </div>
+
+    <div style="max-width:520px;margin:0 auto;">
+      <div class="card" style="margin-bottom:0;">
+        <div style="text-align:center; color:var(--gray-text); font-size:0.88rem; line-height:1.6;">
+          🕒 Touch your office location above to get started.<br>
+          Your information is kept private and secure.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 2 — PATIENT LOOKUP
+══════════════════════════════════════ -->
+<div id="screen-lookup" class="screen">
+  <div class="header">
+    <div class="header-logo">🦴</div>
+    <div class="header-text">
+      <h1>Chiropractic Care</h1>
+      <p>Patient Check-In</p>
+    </div>
+    <div class="header-office-badge visible" id="lookup-office-badge">Rogers</div>
+  </div>
+  <div class="content">
+    <button class="back-link" onclick="goBack('screen-office', 'screen-lookup')">
+      ← Back
+    </button>
+
+    <div class="section-heading">Find Your Record</div>
+    <div class="section-sub">Search by phone number or last name to check in.</div>
+
+    <div class="search-wrap">
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-phone" onclick="switchTab('phone')">📱 Phone Number</button>
+        <button class="tab-btn"        id="tab-name"  onclick="switchTab('name')">👤 Last Name</button>
+      </div>
+
+      <!-- Phone Tab -->
+      <div class="tab-content" id="panel-phone">
+        <div class="input-row">
+          <input type="tel" id="input-phone" class="search-input"
+                 placeholder="e.g. 555-867-5309"
+                 inputmode="tel"
+                 onkeydown="if(event.key==='Enter') doSearch()" />
+          <button class="search-btn" onclick="doSearch()">Search</button>
+        </div>
+      </div>
+
+      <!-- Name Tab (hidden by default) -->
+      <div class="tab-content" id="panel-name" style="display:none;">
+        <div class="input-row">
+          <input type="text" id="input-name" class="search-input"
+                 placeholder="e.g. Johnson"
+                 onkeydown="if(event.key==='Enter') doSearch()" />
+          <button class="search-btn" onclick="doSearch()">Search</button>
+        </div>
+      </div>
+
+      <div id="search-result" class="search-result"></div>
+
+      <!-- Not found action -->
+      <div id="not-found-block" style="display:none;">
+        <div class="divider">or</div>
+        <div class="not-found-box">
+          <div class="icon">📋</div>
+          <h3>New Patient?</h3>
+          <p>No record found. Complete a quick new patient intake form to get started — it only takes a minute!</p>
+          <button class="btn-intake" onclick="goToIntake()">
+            ✏️ New Patient Intake Form
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 3 — CHECK-IN FORM
+══════════════════════════════════════ -->
+<div id="screen-checkin" class="screen">
+  <div class="header">
+    <div class="header-logo">🦴</div>
+    <div class="header-text">
+      <h1>Chiropractic Care</h1>
+      <p>Today's Visit</p>
+    </div>
+    <div class="header-office-badge visible" id="checkin-office-badge">Rogers</div>
+  </div>
+  <div class="content" id="checkin-content">
+    <button class="back-link" onclick="goBack('screen-lookup', 'screen-checkin')">
+      ← Search Again
+    </button>
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+      <div class="wave">👋</div>
+      <h2 id="welcome-name">Welcome back!</h2>
+      <p id="welcome-last-visit">Great to see you again.</p>
+      <div class="visit-badge" id="welcome-visit-count">Visit #1</div>
+    </div>
+
+    <!-- Reason for Visit -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🗒️</span> Reason for Today's Visit</div>
+      <div class="check-grid">
+        <label class="check-label">
+          <input type="checkbox" name="reason" value="Adjustment">
+          <span class="check-box">✓</span>
+          Adjustment
+        </label>
+        <label class="check-label">
+          <input type="checkbox" name="reason" value="Follow-up">
+          <span class="check-box">✓</span>
+          Follow-up
+        </label>
+        <label class="check-label">
+          <input type="checkbox" name="reason" value="Pain flare-up">
+          <span class="check-box">✓</span>
+          Pain flare-up
+        </label>
+        <label class="check-label">
+          <input type="checkbox" name="reason" value="Wellness visit">
+          <span class="check-box">✓</span>
+          Wellness visit
+        </label>
+        <label class="check-label" style="grid-column: 1 / -1;">
+          <input type="checkbox" name="reason" value="Other">
+          <span class="check-box">✓</span>
+          Other
+        </label>
+      </div>
+      <div class="field-error" id="err-reason">Please select at least one reason.</div>
+    </div>
+
+    <!-- Area of Focus -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🏃</span> Area to Focus On</div>
+      <div class="check-grid">
+        <label class="check-label">
+          <input type="checkbox" name="focus" value="Neck/Cervical">
+          <span class="check-box">✓</span>
+          Neck / Cervical
+        </label>
+        <label class="check-label">
+          <input type="checkbox" name="focus" value="Upper Back/Thoracic">
+          <span class="check-box">✓</span>
+          Upper Back / Thoracic
+        </label>
+        <label class="check-label">
+          <input type="checkbox" name="focus" value="Lower Back/Lumbar">
+          <span class="check-box">✓</span>
+          Lower Back / Lumbar
+        </label>
+        <label class="check-label">
+          <input type="checkbox" name="focus" value="Hips/Pelvis">
+          <span class="check-box">✓</span>
+          Hips / Pelvis
+        </label>
+        <label class="check-label">
+          <input type="checkbox" name="focus" value="Shoulders">
+          <span class="check-box">✓</span>
+          Shoulders
+        </label>
+        <label class="check-label">
+          <input type="checkbox" name="focus" value="Headache">
+          <span class="check-box">✓</span>
+          Headache
+        </label>
+      </div>
+      <div class="field-error" id="err-focus">Please select at least one area.</div>
+    </div>
+
+    <!-- Pain Scale -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📊</span> Pain Level Today</div>
+      <div class="pain-slider-wrap">
+        <div class="pain-value-display">
+          <span id="pain-number">5</span>
+          <span class="pain-label-text" id="pain-label-text">Moderate</span>
+        </div>
+        <div class="pain-labels">
+          <span>1 — None</span>
+          <span>10 — Severe</span>
+        </div>
+        <input type="range" id="pain-slider" min="1" max="10" value="5"
+               oninput="updatePainDisplay(this.value)" />
+      </div>
+    </div>
+
+    <!-- Change Since Last Visit -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📈</span> Change Since Last Visit</div>
+      <div class="radio-grid">
+        <label class="radio-label">
+          <input type="radio" name="change" value="Better">
+          <span class="radio-dot"></span>
+          😊 Better
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="change" value="Same">
+          <span class="radio-dot"></span>
+          😐 Same
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="change" value="Worse">
+          <span class="radio-dot"></span>
+          😟 Worse
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="change" value="First visit back in a while">
+          <span class="radio-dot"></span>
+          🔄 First visit back in a while
+        </label>
+      </div>
+      <div class="field-error" id="err-change">Please select one option.</div>
+    </div>
+
+    <!-- Check In Button -->
+    <button class="btn-primary" id="btn-checkin" onclick="submitCheckin()">
+      ✅ CHECK IN
+    </button>
+
+    <div style="height:20px;"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SUCCESS OVERLAY
+══════════════════════════════════════ -->
+<div class="toast-overlay" id="success-overlay">
+  <div class="toast-box">
+    <div class="big-check">✅</div>
+    <h2>You're Checked In!</h2>
+    <p id="success-msg">We'll be with you shortly. Please have a seat.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+  // ── STATE ──
+  var state = {
+    office: '',
+    searchMode: 'phone',   // 'phone' | 'name'
+    patient: null          // patient object from localStorage
+  };
+
+  // ── PAIN LABELS ──
+  var painLabels = {
+    1: 'No Pain',  2: 'Very Mild',  3: 'Mild',
+    4: 'Mild-Moderate', 5: 'Moderate', 6: 'Moderate-Severe',
+    7: 'Severe',   8: 'Very Severe', 9: 'Intense',  10: 'Unbearable'
+  };
+
+  // ── NAVIGATE ──
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(function(s) {
+      s.classList.remove('active');
+    });
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function goBack(targetScreen, currentScreen) {
+    showScreen(targetScreen);
+  }
+
+  // ── OFFICE SELECTION ──
+  function selectOffice(office) {
+    state.office = office;
+    // Update badges
+    document.getElementById('lookup-office-badge').textContent  = office;
+    document.getElementById('checkin-office-badge').textContent = office;
+    // Highlight selected
+    document.getElementById('btn-rogers').classList.toggle('selected', office === 'Rogers');
+    document.getElementById('btn-eureka').classList.toggle('selected', office === 'Eureka Springs');
+    // Clear previous search state
+    clearSearchState();
+    showScreen('screen-lookup');
+  }
+
+  // ── TABS ──
+  function switchTab(tab) {
+    state.searchMode = tab;
+    document.getElementById('tab-phone').classList.toggle('active', tab === 'phone');
+    document.getElementById('tab-name').classList.toggle('active', tab === 'name');
+    document.getElementById('panel-phone').style.display = tab === 'phone' ? 'block' : 'none';
+    document.getElementById('panel-name').style.display  = tab === 'name'  ? 'block' : 'none';
+    clearSearchResult();
+  }
+
+  function clearSearchResult() {
+    var el = document.getElementById('search-result');
+    el.className = 'search-result';
+    el.textContent = '';
+    document.getElementById('not-found-block').style.display = 'none';
+  }
+
+  function clearSearchState() {
+    document.getElementById('input-phone').value = '';
+    document.getElementById('input-name').value  = '';
+    state.patient = null;
+    clearSearchResult();
+  }
+
+  // ── NORMALIZE PHONE ──
+  function normalizePhone(raw) {
+    return raw.replace(/\D/g, '');
+  }
+
+  // ── GET ALL PATIENTS FROM localStorage ──
+  function getAllPatients() {
+    var patients = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && key.startsWith('patient_')) {
+        try {
+          var p = JSON.parse(localStorage.getItem(key));
+          if (p) patients.push(p);
+        } catch(e) {}
+      }
+    }
+    return patients;
+  }
+
+  // ── SEARCH ──
+  function doSearch() {
+    clearSearchResult();
+    var patients = getAllPatients();
+    var found = null;
+
+    if (state.searchMode === 'phone') {
+      var rawPhone = document.getElementById('input-phone').value.trim();
+      var phone    = normalizePhone(rawPhone);
+      if (!phone) {
+        showSearchMsg('not-found', '⚠️ Please enter a phone number.');
+        return;
+      }
+      found = patients.find(function(p) {
+        return p.phone && normalizePhone(String(p.phone)) === phone;
+      }) || null;
+    } else {
+      var lastName = document.getElementById('input-name').value.trim().toLowerCase();
+      if (!lastName) {
+        showSearchMsg('not-found', '⚠️ Please enter a last name.');
+        return;
+      }
+      found = patients.find(function(p) {
+        return p.lastName && p.lastName.toLowerCase().startsWith(lastName);
+      }) || null;
+    }
+
+    if (found) {
+      state.patient = found;
+      showSearchMsg('found', '✅ Found: ' + found.firstName + ' ' + found.lastName + ' — tap below to continue.');
+      setTimeout(function() { loadCheckinScreen(); }, 900);
+    } else {
+      showSearchMsg('not-found', '❌ No record found. Check your entry or register as a new patient below.');
+      document.getElementById('not-found-block').style.display = 'block';
+    }
+  }
+
+  function showSearchMsg(type, msg) {
+    var el = document.getElementById('search-result');
+    el.className = 'search-result ' + type;
+    el.textContent = msg;
+  }
+
+  // ── GO TO INTAKE ──
+  function goToIntake() {
+    var office = encodeURIComponent(state.office);
+    window.location.href = 'intake.html?office=' + office;
+  }
+
+  // ── LOAD CHECK-IN SCREEN ──
+  function loadCheckinScreen() {
+    var p = state.patient;
+    if (!p) return;
+
+    // Welcome banner
+    document.getElementById('welcome-name').textContent =
+      'Welcome back, ' + p.firstName + '!';
+
+    var visitCount = (p.visitCount || 0) + 1;
+    document.getElementById('welcome-visit-count').textContent = 'Visit #' + visitCount;
+
+    if (p.lastVisitDate) {
+      var d = new Date(p.lastVisitDate);
+      document.getElementById('welcome-last-visit').textContent =
+        'Last visit: ' + d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    } else {
+      document.getElementById('welcome-last-visit').textContent = 'We\u2019re glad you\u2019re here!';
+    }
+
+    // Reset form
+    document.querySelectorAll('input[name="reason"]').forEach(function(cb) { cb.checked = false; });
+    document.querySelectorAll('input[name="focus"]').forEach(function(cb)  { cb.checked = false; });
+    document.querySelectorAll('input[name="change"]').forEach(function(rb) { rb.checked = false; });
+    document.getElementById('pain-slider').value = '5';
+    updatePainDisplay(5);
+    ['err-reason','err-focus','err-change'].forEach(function(id) {
+      document.getElementById(id).classList.remove('show');
+    });
+
+    showScreen('screen-checkin');
+  }
+
+  // ── PAIN DISPLAY ──
+  function updatePainDisplay(val) {
+    document.getElementById('pain-number').textContent    = val;
+    document.getElementById('pain-label-text').textContent = painLabels[val] || '';
+  }
+
+  // ── VALIDATE ──
+  function validateCheckin() {
+    var valid = true;
+    var reasons = Array.from(document.querySelectorAll('input[name="reason"]:checked'));
+    var focuses = Array.from(document.querySelectorAll('input[name="focus"]:checked'));
+    var change  = document.querySelector('input[name="change"]:checked');
+
+    if (reasons.length === 0) {
+      document.getElementById('err-reason').classList.add('show');
+      valid = false;
+    } else {
+      document.getElementById('err-reason').classList.remove('show');
+    }
+
+    if (focuses.length === 0) {
+      document.getElementById('err-focus').classList.add('show');
+      valid = false;
+    } else {
+      document.getElementById('err-focus').classList.remove('show');
+    }
+
+    if (!change) {
+      document.getElementById('err-change').classList.add('show');
+      valid = false;
+    } else {
+      document.getElementById('err-change').classList.remove('show');
+    }
+
+    return valid;
+  }
+
+  // ── SUBMIT ──
+  function submitCheckin() {
+    if (!validateCheckin()) {
+      // Scroll to first error
+      var firstErr = document.querySelector('.field-error.show');
+      if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    var btn = document.getElementById('btn-checkin');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Checking in...';
+
+    var p         = state.patient;
+    var reasons   = Array.from(document.querySelectorAll('input[name="reason"]:checked')).map(function(i) { return i.value; });
+    var focuses   = Array.from(document.querySelectorAll('input[name="focus"]:checked')).map(function(i) { return i.value; });
+    var painVal   = document.getElementById('pain-slider').value;
+    var changeVal = document.querySelector('input[name="change"]:checked').value;
+    var newVisit  = (p.visitCount || 0) + 1;
+    var lastDate  = p.lastVisitDate ? new Date(p.lastVisitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A';
+
+    // Update localStorage
+    p.visitCount    = newVisit;
+    p.lastVisitDate = new Date().toISOString();
+    var key = 'patient_' + (p.id || normalizePhone(String(p.phone || '')) || p.lastName);
+    localStorage.setItem(key, JSON.stringify(p));
+
+    // Build WhatsApp message
+    var msg = [
+      '🦴 *Chiropractic Check-In*',
+      '📍 Office: ' + state.office,
+      '👤 Patient: ' + p.firstName + ' ' + p.lastName,
+      '🔢 Visit #: ' + newVisit,
+      '📋 Reason: ' + reasons.join(', '),
+      '🏃 Focus Area: ' + focuses.join(', '),
+      '📊 Pain Level: ' + painVal + '/10 (' + (painLabels[painVal] || '') + ')',
+      '📈 Change: ' + changeVal,
+      '📅 Last Visit: ' + lastDate
+    ].join('\n');
+
+    // POST to WhatsApp bridge
+    fetch('http://localhost:3000/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chatId: '14794264007@c.us',
+        message: msg
+      })
+    })
+    .then(function(res) { return res.json(); })
+    .catch(function(err) {
+      console.warn('WhatsApp notification failed (non-critical):', err);
+      return {};
+    })
+    .finally(function() {
+      showSuccess(p.firstName, newVisit);
+    });
+  }
+
+  // ── SUCCESS ──
+  function showSuccess(firstName, visitNum) {
+    document.getElementById('success-msg').textContent =
+      'Thanks, ' + firstName + '! This is visit #' + visitNum + '. We\u2019ll be right with you \u2014 please have a seat.';
+    document.getElementById('success-overlay').classList.add('show');
+
+    // Auto-reset after 6 seconds
+    setTimeout(function() {
+      document.getElementById('success-overlay').classList.remove('show');
+      // Reset to office screen
+      state.patient = null;
+      clearSearchState();
+      document.getElementById('btn-rogers').classList.remove('selected');
+      document.getElementById('btn-eureka').classList.remove('selected');
+      var btn = document.getElementById('btn-checkin');
+      btn.disabled = false;
+      btn.innerHTML = '&#x2705; CHECK IN';
+      showScreen('screen-office');
+    }, 6000);
+  }
+
+  // ── DEMO SEED (optional — remove in production) ──
+  // Seeds a couple of test patients if no patients exist yet.
+  (function seedDemo() {
+    if (getAllPatients().length > 0) return;
+    var demos = [
+      {
+        id: 'demo1',
+        firstName: 'Jane',
+        lastName: 'Smith',
+        phone: '5551234567',
+        visitCount: 7,
+        lastVisitDate: new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
+      },
+      {
+        id: 'demo2',
+        firstName: 'Robert',
+        lastName: 'Johnson',
+        phone: '5559876543',
+        visitCount: 2,
+        lastVisitDate: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
+      }
+    ];
+    demos.forEach(function(d) {
+      localStorage.setItem('patient_' + d.id, JSON.stringify(d));
+    });
+  })();
+</script>
+</body>
+</html>

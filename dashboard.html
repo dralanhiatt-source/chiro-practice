@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chiropractic Practice Dashboard</title>
+<style>
+  :root {
+    --navy: #1a2b5e;
+    --navy-light: #253575;
+    --navy-dark: #111d42;
+    --white: #ffffff;
+    --gray-100: #f4f6fb;
+    --gray-200: #e8ecf4;
+    --gray-300: #c8d0e0;
+    --gray-500: #7a8aaa;
+    --gray-700: #3d4a6a;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --yellow-bg: #fef9c3;
+    --blue-accent: #3b82f6;
+    --card-radius: 12px;
+    --shadow: 0 2px 12px rgba(26,43,94,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray-100); color: var(--navy-dark); min-height: 100vh; }
+
+  /* PIN SCREEN */
+  #pin-screen {
+    position: fixed; inset: 0; background: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; flex-direction: column; gap: 24px;
+  }
+  #pin-screen.hidden { display: none; }
+  .pin-logo { color: var(--white); text-align: center; }
+  .pin-logo h1 { font-size: 28px; font-weight: 700; letter-spacing: 1px; }
+  .pin-logo p { font-size: 14px; color: var(--gray-300); margin-top: 4px; }
+  .pin-card {
+    background: var(--white); border-radius: 16px; padding: 36px 40px;
+    width: 340px; box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .pin-card h2 { font-size: 18px; color: var(--navy); text-align: center; font-weight: 600; }
+  .pin-dots {
+    display: flex; justify-content: center; gap: 14px; margin: 4px 0;
+  }
+  .pin-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--gray-300); background: transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .pin-dot.filled { background: var(--navy); border-color: var(--navy); }
+  .pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .pin-key {
+    padding: 14px; border: 1.5px solid var(--gray-200); background: var(--gray-100);
+    border-radius: 10px; font-size: 20px; font-weight: 600; color: var(--navy);
+    cursor: pointer; text-align: center; transition: background 0.12s;
+    user-select: none;
+  }
+  .pin-key:hover { background: var(--gray-200); }
+  .pin-key.clear { font-size: 13px; color: var(--red); }
+  .pin-key.zero { grid-column: 2; }
+  .pin-error { color: var(--red); font-size: 13px; text-align: center; min-height: 18px; }
+  .remember-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray-700); }
+  .remember-row input { width: 16px; height: 16px; accent-color: var(--navy); cursor: pointer; }
+
+  /* TOP BAR */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  #app.visible { display: flex; }
+  .topbar {
+    background: var(--navy); color: var(--white);
+    padding: 0 32px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-brand { display: flex; align-items: center; gap: 12px; }
+  .topbar-brand .icon { font-size: 24px; }
+  .topbar-brand h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  .topbar-brand p { font-size: 11px; color: var(--gray-300); }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .topbar-date { font-size: 12px; color: var(--gray-300); }
+  .lock-btn {
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+    color: var(--white); padding: 6px 14px; border-radius: 8px; cursor: pointer;
+    font-size: 12px; transition: background 0.15s;
+  }
+  .lock-btn:hover { background: rgba(255,255,255,0.22); }
+
+  /* RATE BANNER */
+  .rate-banner {
+    background: #fef9c3; border-bottom: 2px solid #f59e0b;
+    padding: 12px 32px; display: flex; align-items: center; gap: 12px;
+    font-size: 14px; color: #78350f; display: none;
+  }
+  .rate-banner.visible { display: flex; }
+  .rate-banner .banner-icon { font-size: 20px; }
+  .rate-banner strong { font-weight: 700; }
+  .rate-banner.confirmed { background: #d1fae5; border-color: #22c55e; color: #14532d; }
+
+  /* LOCATION TABS */
+  .location-tabs {
+    background: var(--white); border-bottom: 2px solid var(--gray-200);
+    padding: 0 32px; display: flex; gap: 0;
+  }
+  .loc-tab {
+    padding: 16px 28px; font-size: 15px; font-weight: 600; color: var(--gray-500);
+    cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s; letter-spacing: 0.3px;
+  }
+  .loc-tab:hover { color: var(--navy); }
+  .loc-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+
+  /* NAV TABS */
+  .nav-tabs {
+    background: var(--white); padding: 0 32px;
+    display: flex; gap: 4px; border-bottom: 1px solid var(--gray-200);
+    overflow-x: auto;
+  }
+  .nav-tab {
+    padding: 10px 18px; font-size: 13px; font-weight: 500; color: var(--gray-500);
+    cursor: pointer; border-radius: 8px 8px 0 0; white-space: nowrap;
+    transition: background 0.12s, color 0.12s; border: 1px solid transparent;
+    border-bottom: none; margin-bottom: -1px;
+  }
+  .nav-tab:hover { background: var(--gray-100); color: var(--navy); }
+  .nav-tab.active { background: var(--gray-100); color: var(--navy); font-weight: 600; border-color: var(--gray-200); }
+
+  /* MAIN CONTENT */
+  .main { padding: 28px 32px; flex: 1; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* CARDS */
+  .section-title { font-size: 13px; font-weight: 700; color: var(--gray-500); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; margin-top: 28px; }
+  .section-title:first-child { margin-top: 0; }
+  .cards-row { display: grid; gap: 16px; margin-bottom: 0; }
+  .cards-4 { grid-template-columns: repeat(4, 1fr); }
+  .cards-3 { grid-template-columns: repeat(3, 1fr); }
+  .cards-2 { grid-template-columns: repeat(2, 1fr); }
+  .card {
+    background: var(--white); border-radius: var(--card-radius);
+    padding: 22px 24px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .card-label { font-size: 12px; color: var(--gray-500); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card-value { font-size: 28px; font-weight: 700; color: var(--navy); line-height: 1.1; }
+  .card-value.medium { font-size: 22px; }
+  .card-sub { font-size: 13px; color: var(--gray-500); }
+  .card-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 600; padding: 3px 8px;
+    border-radius: 20px; width: fit-content; margin-top: 2px;
+  }
+  .badge-up { background: #dcfce7; color: #166534; }
+  .badge-down { background: #fee2e2; color: #991b1b; }
+  .badge-neutral { background: var(--gray-200); color: var(--gray-700); }
+  .next-patient { font-size: 15px; font-weight: 600; color: var(--navy); }
+  .next-patient-time { font-size: 13px; color: var(--blue-accent); }
+
+  /* FORMS */
+  .form-card { background: var(--white); border-radius: var(--card-radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 20px; }
+  .form-card h3 { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 18px; }
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--gray-700); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 9px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px;
+    font-size: 14px; color: var(--navy-dark); background: var(--gray-100);
+    transition: border-color 0.15s; outline: none; width: 100%;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--navy); background: var(--white); }
+  .btn {
+    padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s, box-shadow 0.15s; border: none;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--navy); color: var(--white); }
+  .btn-primary:hover { background: var(--navy-light); box-shadow: 0 2px 8px rgba(26,43,94,0.3); }
+  .btn-secondary { background: var(--gray-200); color: var(--navy); }
+  .btn-secondary:hover { background: var(--gray-300); }
+  .btn-success { background: var(--green); color: var(--white); }
+  .btn-danger { background: var(--red); color: var(--white); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* TABLES */
+  .table-card { background: var(--white); border-radius: var(--card-radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
+  .table-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
+  .table-header h3 { font-size: 15px; font-weight: 700; color: var(--navy); }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--gray-100); color: var(--gray-700); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 10px 16px; text-align: left; }
+  td { padding: 12px 16px; font-size: 13px; border-top: 1px solid var(--gray-200); color: var(--navy-dark); }
+  tr:hover td { background: var(--gray-100); }
+  .empty-row td { text-align: center; color: var(--gray-500); padding: 32px; }
+
+  /* SEARCH */
+  .search-bar { display: flex; gap: 12px; margin-bottom: 16px; }
+  .search-input { flex: 1; padding: 10px 16px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 14px; outline: none; background: var(--white); }
+  .search-input:focus { border-color: var(--navy); }
+
+  /* EXPENSE CHART */
+  .chart-bar-wrap { margin: 8px 0; }
+  .chart-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--gray-700); margin-bottom: 3px; }
+  .chart-bar-track { height: 14px; background: var(--gray-200); border-radius: 7px; overflow: hidden; }
+  .chart-bar-fill { height: 100%; background: var(--navy); border-radius: 7px; transition: width 0.4s; }
+
+  /* P&L */
+  .pl-section { background: var(--white); border-radius: var(--card-radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .pl-section h3 { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--gray-200); }
+  .pl-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-100); font-size: 14px; }
+  .pl-row:last-child { border-bottom: none; }
+  .pl-total { font-weight: 700; color: var(--navy); font-size: 15px; margin-top: 8px; padding-top: 10px; border-top: 2px solid var(--gray-200); }
+  .pl-net { font-size: 20px; font-weight: 700; }
+  .pl-net.positive { color: var(--green); }
+  .pl-net.negative { color: var(--red); }
+
+  /* PATIENT MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: 16px; width: 600px; max-width: 95vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.3); }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--white); }
+  .modal-header h2 { font-size: 18px; font-weight: 700; color: var(--navy); }
+  .modal-close { font-size: 22px; cursor: pointer; color: var(--gray-500); background: none; border: none; line-height: 1; }
+  .modal-body { padding: 24px; }
+
+  /* VISIT HISTORY */
+  .visit-history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .visit-history-table th { background: var(--gray-100); padding: 8px 12px; text-align: left; font-size: 11px; color: var(--gray-700); text-transform: uppercase; letter-spacing: 0.5px; }
+  .visit-history-table td { padding: 10px 12px; border-top: 1px solid var(--gray-200); }
+
+  /* SUMMARY STAT */
+  .summary-row { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .summary-stat { background: var(--gray-100); border-radius: 8px; padding: 12px 18px; flex: 1; min-width: 120px; }
+  .summary-stat .s-label { font-size: 11px; color: var(--gray-500); font-weight: 600; text-transform: uppercase; }
+  .summary-stat .s-val { font-size: 20px; font-weight: 700; color: var(--navy); }
+
+  /* MILEAGE */
+  .mileage-rate-badge { background: var(--navy); color: var(--white); border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; display: inline-block; margin-bottom: 14px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .cards-4 { grid-template-columns: repeat(2, 1fr); }
+    .cards-3 { grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 16px; }
+    .topbar { padding: 0 16px; }
+    .location-tabs, .nav-tabs { padding: 0 16px; }
+  }
+  @media (max-width: 600px) {
+    .cards-4, .cards-3, .cards-2 { grid-template-columns: 1fr; }
+    .form-row { flex-direction: column; }
+  }
+
+  @media print {
+    #pin-screen { display: none !important; }
+    .topbar, .location-tabs, .nav-tabs, .lock-btn, .rate-banner { display: none !important; }
+    .main { padding: 0; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div id="pin-screen">
+  <div class="pin-logo">
+    <h1>🦴 Chiropractic Dashboard</h1>
+    <p>Rogers &amp; Eureka Springs Locations</p>
+  </div>
+  <div class="pin-card">
+    <h2>Enter PIN</h2>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="dot0"></div>
+      <div class="pin-dot" id="dot1"></div>
+      <div class="pin-dot" id="dot2"></div>
+      <div class="pin-dot" id="dot3"></div>
+    </div>
+    <div class="pin-keypad">
+      <div class="pin-key" onclick="pinKey('1')">1</div>
+      <div class="pin-key" onclick="pinKey('2')">2</div>
+      <div class="pin-key" onclick="pinKey('3')">3</div>
+      <div class="pin-key" onclick="pinKey('4')">4</div>
+      <div class="pin-key" onclick="pinKey('5')">5</div>
+      <div class="pin-key" onclick="pinKey('6')">6</div>
+      <div class="pin-key" onclick="pinKey('7')">7</div>
+      <div class="pin-key" onclick="pinKey('8')">8</div>
+      <div class="pin-key" onclick="pinKey('9')">9</div>
+      <div class="pin-key clear" onclick="pinClear()">⌫</div>
+      <div class="pin-key zero" onclick="pinKey('0')">0</div>
+      <div class="pin-key clear" onclick="pinReset()">CLR</div>
+    </div>
+    <div class="remember-row">
+      <input type="checkbox" id="remember-device" />
+      <label for="remember-device">Remember this device for 30 days</label>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <span class="icon">🦴</span>
+      <div>
+        <h1>Chiropractic Dashboard</h1>
+        <p>Practice Management &amp; Analytics</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-date" id="topbar-date"></span>
+      <button class="lock-btn" onclick="lockApp()">🔒 Lock</button>
+    </div>
+  </div>
+
+  <!-- RATE BANNER -->
+  <div class="rate-banner" id="rate-banner">
+    <span class="banner-icon">⚠️</span>
+    <span id="rate-banner-text"></span>
+  </div>
+
+  <!-- LOCATION TABS -->
+  <div class="location-tabs">
+    <div class="loc-tab active" onclick="switchLocation('rogers')" id="loc-rogers">Rogers</div>
+    <div class="loc-tab" onclick="switchLocation('eureka')" id="loc-eureka">Eureka Springs</div>
+    <div class="loc-tab" onclick="switchLocation('combined')" id="loc-combined">Combined</div>
+  </div>
+
+  <!-- NAV TABS -->
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchTab('overview')" id="nav-overview">📊 Overview</div>
+    <div class="nav-tab" onclick="switchTab('mileage')" id="nav-mileage">🚗 Mileage Log</div>
+    <div class="nav-tab" onclick="switchTab('expenses')" id="nav-expenses">💳 Expenses</div>
+    <div class="nav-tab" onclick="switchTab('pl')" id="nav-pl">📈 Profit &amp; Loss</div>
+    <div class="nav-tab" onclick="switchTab('patients')" id="nav-patients">👤 Patients</div>
+    <div class="nav-tab" onclick="switchTab('data')" id="nav-data">⚙️ Data</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- OVERVIEW TAB -->
+    <div class="tab-content active" id="tab-overview">
+
+      <div class="section-title" id="location-label">Rogers — Overview</div>
+
+      <!-- TODAY -->
+      <div class="section-title">Today</div>
+      <div class="cards-row cards-4" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-label">Patients Seen Today</div>
+          <div class="card-value" id="today-patients">0</div>
+          <div class="card-sub" id="today-date-label"></div>
+        </div>
+        <div class="card">
+          <div class="card-label">Revenue Today</div>
+          <div class="card-value" id="today-revenue">$0</div>
+          <div class="card-sub">Collected today</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Appts Remaining</div>
+          <div class="card-value" id="today-remaining">0</div>
+          <div class="card-sub">Scheduled remaining</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Next Patient</div>
+          <div class="next-patient" id="next-patient-name">—</div>
+          <div class="next-patient-time" id="next-patient-time"></div>
+        </div>
+      </div>
+
+      <!-- THIS WEEK -->
+      <div class="section-title" id="week-label-title">This Week (Mon–Sun)</div>
+      <div class="cards-row cards-3" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-label">Total Patients</div>
+          <div class="card-value" id="week-patients">0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Revenue</div>
+          <div class="card-value" id="week-revenue">$0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">vs Last Week</div>
+          <div class="card-value medium" id="week-vs">—</div>
+          <div id="week-badge"></div>
+        </div>
+      </div>
+
+      <!-- THIS MONTH -->
+      <div class="section-title" id="month-label-title">This Month</div>
+      <div class="cards-row cards-3" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-label">Total Patients</div>
+          <div class="card-value" id="month-patients">0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Revenue</div>
+          <div class="card-value" id="month-revenue">$0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">vs Last Month</div>
+          <div class="card-value medium" id="month-vs">—</div>
+          <div id="month-badge"></div>
+        </div>
+      </div>
+
+      <!-- YEAR TO DATE -->
+      <div class="section-title">Year to Date</div>
+      <div class="cards-row cards-4" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-label">Total Patients YTD</div>
+          <div class="card-value" id="ytd-patients">0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Revenue YTD</div>
+          <div class="card-value" id="ytd-revenue">$0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Monthly Average</div>
+          <div class="card-value" id="ytd-avg">$0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Projected to Dec 31</div>
+          <div class="card-value" id="ytd-projection">$0</div>
+          <div class="card-sub">Based on daily rate</div>
+        </div>
+      </div>
+
+      <!-- ADD VISIT (Quick) -->
+      <div class="form-card">
+        <h3>➕ Log a Visit</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="visit-date" />
+          </div>
+          <div class="form-group">
+            <label>Patient Name</label>
+            <input type="text" id="visit-patient" placeholder="Full name" list="patient-suggestions" />
+            <datalist id="patient-suggestions"></datalist>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="visit-phone" placeholder="(555) 000-0000" />
+          </div>
+          <div class="form-group">
+            <label>Appointment Type</label>
+            <select id="visit-type">
+              <option value="New Patient">New Patient ($60)</option>
+              <option value="Existing Patient" selected>Existing Patient ($40)</option>
+              <option value="4-Visit Plan">4-Visit Plan ($140)</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Amount Paid ($)</label>
+            <input type="number" id="visit-amount" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Time</label>
+            <input type="time" id="visit-time" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:3">
+            <label>Notes</label>
+            <input type="text" id="visit-notes" placeholder="Optional notes" />
+          </div>
+          <div class="form-group" style="flex:1;align-items:flex-end;justify-content:flex-end;">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" onclick="addVisit()">Add Visit</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDULED (remaining today) -->
+      <div class="form-card">
+        <h3>📅 Schedule Appointment</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="sched-date" />
+          </div>
+          <div class="form-group">
+            <label>Patient Name</label>
+            <input type="text" id="sched-patient" placeholder="Full name" />
+          </div>
+          <div class="form-group">
+            <label>Time</label>
+            <input type="time" id="sched-time" />
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select id="sched-type">
+              <option value="New Patient">New Patient</option>
+              <option value="Existing Patient" selected>Existing Patient</option>
+              <option value="4-Visit Plan">4-Visit Plan</option>
+            </select>
+          </div>
+          <div class="form-group" style="align-items:flex-end;justify-content:flex-end;">
+            <label>&nbsp;</label>
+            <button class="btn btn-secondary" onclick="addScheduled()">Schedule</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end tab-overview -->
+
+    <!-- MILEAGE TAB -->
+    <div class="tab-content" id="tab-mileage">
+      <div class="section-title">Mileage Log</div>
+
+      <div style="margin-bottom:16px;">
+        <span class="mileage-rate-badge">2024 IRS Rate: $0.67/mile</span>
+      </div>
+
+      <div class="form-card">
+        <h3>➕ Add Mileage Entry</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="mile-date" />
+          </div>
+          <div class="form-group">
+            <label>Route</label>
+            <select id="mile-route" onchange="routePreset()">
+              <option value="">— Select Route —</option>
+              <option value="Bella Vista → Rogers">Bella Vista → Rogers (24 mi RT)</option>
+              <option value="Bella Vista → Eureka Springs">Bella Vista → Eureka Springs (52 mi RT)</option>
+              <option value="Rogers → Eureka Springs">Rogers → Eureka Springs</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Miles</label>
+            <input type="number" id="mile-miles" placeholder="0" min="0" step="0.1" />
+          </div>
+          <div class="form-group">
+            <label>Purpose</label>
+            <input type="text" id="mile-purpose" placeholder="e.g., Patient visits" />
+          </div>
+          <div class="form-group" style="align-items:flex-end;justify-content:flex-end;">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" onclick="addMileage()">Add Entry</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cards-row cards-3" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-label">Total Miles Logged</div>
+          <div class="card-value" id="total-miles">0</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Deduction</div>
+          <div class="card-value" id="total-mile-deduction">$0.00</div>
+          <div class="card-sub">@ $0.67/mile</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Entries This Year</div>
+          <div class="card-value" id="total-mile-entries">0</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Mileage Entries</h3>
+          <button class="btn btn-secondary btn-sm" onclick="exportMileageCSV()">⬇ Export CSV</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Route</th><th>Miles</th><th>Purpose</th><th>Deduction</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="mileage-table-body">
+            <tr class="empty-row"><td colspan="6">No mileage entries yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div><!-- end tab-mileage -->
+
+    <!-- EXPENSES TAB -->
+    <div class="tab-content" id="tab-expenses">
+      <div class="section-title">Business Expenses</div>
+
+      <div class="form-card">
+        <h3>➕ Add Expense</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="exp-date" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="exp-category">
+              <option value="Office Supplies">Office Supplies</option>
+              <option value="Software/Tech">Software/Tech</option>
+              <option value="Professional Development">Professional Development</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Mileage">Mileage</option>
+              <option value="Insurance">Insurance</option>
+              <option value="Equipment">Equipment</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:2">
+            <label>Description</label>
+            <input type="text" id="exp-desc" placeholder="Description" />
+          </div>
+          <div class="form-group">
+            <label>Amount ($)</label>
+            <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="form-group" style="align-items:flex-end;justify-content:flex-end;">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" onclick="addExpense()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Category Totals</div>
+      <div class="form-card" style="margin-bottom:20px">
+        <div id="expense-chart"></div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <h3>All Expenses</h3>
+          <button class="btn btn-secondary btn-sm" onclick="exportExpensesCSV()">⬇ Export CSV</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Action</th></tr>
+          </thead>
+          <tbody id="expenses-table-body">
+            <tr class="empty-row"><td colspan="5">No expenses logged yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div><!-- end tab-expenses -->
+
+    <!-- P&L TAB -->
+    <div class="tab-content" id="tab-pl">
+      <div class="section-title">Profit &amp; Loss — <span id="pl-location-label">Rogers</span></div>
+
+      <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+        <div class="form-group" style="flex:0 0 auto; min-width:140px;">
+          <label>Year</label>
+          <select id="pl-year" onchange="renderPL()"></select>
+        </div>
+        <div class="form-group" style="flex:0 0 auto; min-width:140px;">
+          <label>Month (blank = full year)</label>
+          <select id="pl-month" onchange="renderPL()">
+            <option value="">All Months</option>
+            <option value="0">January</option>
+            <option value="1">February</option>
+            <option value="2">March</option>
+            <option value="3">April</option>
+            <option value="4">May</option>
+            <option value="5">June</option>
+            <option value="6">July</option>
+            <option value="7">August</option>
+            <option value="8">September</option>
+            <option value="9">October</option>
+            <option value="10">November</option>
+            <option value="11">December</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:0 0 auto; align-items:flex-end; justify-content:flex-end;">
+          <label>&nbsp;</label>
+          <button class="btn btn-secondary" onclick="window.print()">🖨 Print / PDF</button>
+        </div>
+      </div>
+
+      <div class="pl-section">
+        <h3>Revenue</h3>
+        <div id="pl-revenue-rows"></div>
+        <div class="pl-row pl-total">
+          <span>Total Revenue</span>
+          <span id="pl-total-revenue">$0.00</span>
+        </div>
+      </div>
+
+      <div class="pl-section">
+        <h3>Expenses</h3>
+        <div id="pl-expense-rows"></div>
+        <div class="pl-row pl-total">
+          <span>Total Expenses</span>
+          <span id="pl-total-expenses">$0.00</span>
+        </div>
+      </div>
+
+      <div class="pl-section">
+        <h3>Net Profit</h3>
+        <div class="pl-row">
+          <span>Revenue − Expenses</span>
+          <span class="pl-net" id="pl-net">$0.00</span>
+        </div>
+      </div>
+    </div><!-- end tab-pl -->
+
+    <!-- PATIENTS TAB -->
+    <div class="tab-content" id="tab-patients">
+      <div class="section-title">Patient List</div>
+
+      <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+        <input class="search-input" id="patient-search" placeholder="🔍 Search by name or phone..." oninput="renderPatientList()" style="flex:1;min-width:200px;" />
+        <button class="btn btn-secondary btn-sm" onclick="exportPatientsCSV()">⬇ Export CSV</button>
+      </div>
+
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Phone</th><th>First Visit</th><th>Total Visits</th><th>Total Paid</th><th>Last Visit</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="patient-table-body">
+            <tr class="empty-row"><td colspan="7">No patients yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div><!-- end tab-patients -->
+
+    <!-- DATA TAB -->
+    <div class="tab-content" id="tab-data">
+      <div class="section-title">Data Management</div>
+      <div class="form-card">
+        <h3>Import / Export All Data</h3>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">Export a full JSON backup of all dashboard data, or import a previously exported backup.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="exportAllData()">⬇ Export All Data (JSON)</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">⬆ Import Data (JSON)</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)" />
+        </div>
+      </div>
+      <div class="form-card">
+        <h3>⚠️ Clear Data</h3>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">Permanently delete data for a specific section. This cannot be undone.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-danger btn-sm" onclick="clearData('visits')">Clear All Visits</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('scheduled')">Clear Scheduled</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('mileage')">Clear Mileage</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('expenses')">Clear Expenses</button>
+        </div>
+      </div>
+      <div class="form-card">
+        <h3>Seed Sample Data</h3>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">Load sample data to explore the dashboard features.</p>
+        <button class="btn btn-secondary" onclick="seedSampleData()">Load Sample Data</button>
+      </div>
+    </div><!-- end tab-data -->
+
+  </div><!-- end main -->
+
+</div><!-- end app -->
+
+<!-- PATIENT MODAL -->
+<div class="modal-overlay" id="patient-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-patient-name">Patient History</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="summary-row" id="modal-summary"></div>
+      <h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:10px;">Visit History</h3>
+      <table class="visit-history-table">
+        <thead>
+          <tr><th>Date</th><th>Time</th><th>Type</th><th>Amount</th><th>Location</th><th>Notes</th></tr>
+        </thead>
+        <tbody id="modal-visits-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== CONSTANTS =====================
+const CORRECT_PIN = '1234';
+const IRS_RATE = 0.67;
+const REMEMBER_DAYS = 30;
+const ROUTE_PRESETS = {
+  'Bella Vista → Rogers': 24,
+  'Bella Vista → Eureka Springs': 52,
+  'Rogers → Eureka Springs': 0
+};
+const EXPENSE_CATEGORIES = ['Office Supplies','Software/Tech','Professional Development','Marketing','Mileage','Insurance','Equipment','Other'];
+const VISIT_TYPES = ['New Patient','Existing Patient','4-Visit Plan','Other'];
+const DEFAULT_AMOUNTS = {'New Patient':60,'Existing Patient':40,'4-Visit Plan':140,'Other':0};
+
+// ===================== STATE =====================
+let currentLocation = 'rogers';
+let currentTab = 'overview';
+
+// ===================== PIN LOGIC =====================
+let pinEntry = '';
+
+function pinKey(d) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += d;
+  updatePinDots();
+  if (pinEntry.length === 4) setTimeout(checkPin, 120);
+}
+function pinClear() { if (pinEntry.length > 0) { pinEntry = pinEntry.slice(0,-1); updatePinDots(); } }
+function pinReset() { pinEntry = ''; updatePinDots(); document.getElementById('pin-error').textContent = ''; }
+function updatePinDots() {
+  for (let i=0;i<4;i++) {
+    document.getElementById('dot'+i).classList.toggle('filled', i < pinEntry.length);
+  }
+}
+function checkPin() {
+  if (pinEntry === CORRECT_PIN) {
+    if (document.getElementById('remember-device').checked) {
+      localStorage.setItem('chiro_remember', Date.now() + REMEMBER_DAYS*86400000);
+    }
+    unlockApp();
+  } else {
+    document.getElementById('pin-error').textContent = 'Incorrect PIN. Try again.';
+    pinEntry = '';
+    updatePinDots();
+  }
+}
+function unlockApp() {
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  initApp();
+}
+function lockApp() {
+  localStorage.removeItem('chiro_remember');
+  document.getElementById('pin-screen').classList.remove('hidden');
+  document.getElementById('app').classList.remove('visible');
+  pinEntry = '';
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+}
+function checkRemembered() {
+  const val = localStorage.getItem('chiro_remember');
+  if (val && parseInt(val) > Date.now()) {
+    unlockApp();
+    return true;
+  }
+  return false;
+}
+
+// ===================== DATA HELPERS =====================
+function getData(key) {
+  try { return JSON.parse(localStorage.getItem('chiro_'+key) || '[]'); } catch { return []; }
+}
+function setData(key, arr) {
+  localStorage.setItem('chiro_'+key, JSON.stringify(arr));
+}
+
+// visits: {id, location, date, time, patientName, phone, type, amount, notes}
+// scheduled: {id, location, date, time, patientName, type}
+// mileage: {id, date, route, miles, purpose}
+// expenses: {id, date, category, description, amount}
+
+function getVisits() { return getData('visits'); }
+function getScheduled() { return getData('scheduled'); }
+function getMileage() { return getData('mileage'); }
+function getExpenses() { return getData('expenses'); }
+
+function saveVisits(a) { setData('visits',a); }
+function saveScheduled(a) { setData('scheduled',a); }
+function saveMileage(a) { setData('mileage',a); }
+function saveExpenses(a) { setData('expenses',a); }
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
+
+function fmt$(n) { return '$' + (+n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function fmtN(n) { return (+n).toLocaleString(); }
+
+// ===================== DATE HELPERS =====================
+function today() { return new Date().toISOString().slice(0,10); }
+function todayObj() { return new Date(); }
+
+function weekRange(d) {
+  const dt = new Date(d);
+  const day = dt.getDay(); // 0=Sun
+  const diff = (day === 0) ? -6 : 1 - day;
+  const mon = new Date(dt); mon.setDate(dt.getDate() + diff);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return [mon.toISOString().slice(0,10), sun.toISOString().slice(0,10)];
+}
+function lastWeekRange(d) {
+  const dt = new Date(d);
+  dt.setDate(dt.getDate() - 7);
+  return weekRange(dt);
+}
+function monthRange(d) {
+  const dt = new Date(d);
+  const start = new Date(dt.getFullYear(), dt.getMonth(), 1).toISOString().slice(0,10);
+  const end = new Date(dt.getFullYear(), dt.getMonth()+1, 0).toISOString().slice(0,10);
+  return [start, end];
+}
+function lastMonthRange(d) {
+  const dt = new Date(d);
+  const start = new Date(dt.getFullYear(), dt.getMonth()-1, 1).toISOString().slice(0,10);
+  const end = new Date(dt.getFullYear(), dt.getMonth(), 0).toISOString().slice(0,10);
+  return [start, end];
+}
+function yearStart(d) { return new Date(d).getFullYear() + '-01-01'; }
+
+function inRange(date, s, e) { return date >= s && date <= e; }
+
+function dayOfYear(d) {
+  const dt = new Date(d);
+  const start = new Date(dt.getFullYear(), 0, 0);
+  const diff = dt - start;
+  return Math.floor(diff / 86400000);
+}
+function daysInYear(y) { return ((y%4===0&&y%100!==0)||y%400===0)?366:365; }
+
+// ===================== FILTERING =====================
+function filterByLocation(visits) {
+  if (currentLocation === 'combined') return visits;
+  return visits.filter(v => v.location === currentLocation);
+}
+
+// ===================== RATE BANNER =====================
+function initRateBanner() {
+  const banner = document.getElementById('rate-banner');
+  const text = document.getElementById('rate-banner-text');
+  const now = new Date();
+  const y = now.getFullYear(); const m = now.getMonth(); const day = now.getDate();
+  // June 1–30 2026
+  if (y === 2026 && m === 5) {
+    banner.classList.add('visible');
+    banner.classList.remove('confirmed');
+    text.innerHTML = '<strong>⚠️ Rate increase effective July 1, 2026:</strong> New Patient $60→$75 | Existing Patient $40→$50 | 4-Visit Plan $140→$160';
+  } else if ((y > 2026) || (y === 2026 && m >= 6)) {
+    banner.classList.add('visible','confirmed');
+    banner.querySelector('.banner-icon').textContent = '✅';
+    text.innerHTML = '<strong>New rates are now active</strong> — New Patient $75 | Existing Patient $50 | 4-Visit Plan $160';
+  }
+}
+
+// ===================== TOPBAR DATE =====================
+function updateTopbarDate() {
+  const now = new Date();
+  document.getElementById('topbar-date').textContent = now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('today-date-label').textContent = now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+
+// ===================== LOCATION / TAB SWITCHING =====================
+function switchLocation(loc) {
+  currentLocation = loc;
+  ['rogers','eureka','combined'].forEach(l => {
+    document.getElementById('loc-'+l).classList.toggle('active', l===loc);
+  });
+  const labels = {rogers:'Rogers',eureka:'Eureka Springs',combined:'All Locations'};
+  document.getElementById('location-label').textContent = labels[loc] + ' — Overview';
+  document.getElementById('pl-location-label').textContent = labels[loc];
+  refreshAll();
+}
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  refreshAll();
+}
+
+// ===================== VISIT INPUT DEFAULTS =====================
+function setInputDefaults() {
+  document.getElementById('visit-date').value = today();
+  document.getElementById('sched-date').value = today();
+  document.getElementById('mile-date').value = today();
+  document.getElementById('exp-date').value = today();
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('visit-time').value = hh+':'+mm;
+}
+
+// ===================== VISIT TYPE → AMOUNT =====================
+function setupVisitTypeChange() {
+  document.getElementById('visit-type').addEventListener('change', function() {
+    const amt = DEFAULT_AMOUNTS[this.value];
+    if (amt !== undefined) document.getElementById('visit-amount').value = amt || '';
+  });
+  // Default on load
+  const sel = document.getElementById('visit-type');
+  document.getElementById('visit-amount').value = DEFAULT_AMOUNTS[sel.value] || '';
+}
+
+// ===================== PATIENT SUGGESTIONS =====================
+function updatePatientSuggestions() {
+  const visits = getVisits();
+  const names = [...new Set(visits.map(v => v.patientName))].sort();
+  const dl = document.getElementById('patient-suggestions');
+  dl.innerHTML = names.map(n => `<option value="${n}">`).join('');
+
+  // Auto-fill phone when name selected
+  document.getElementById('visit-patient').addEventListener('change', function() {
+    const name = this.value;
+    const match = visits.filter(v => v.patientName.toLowerCase() === name.toLowerCase()).reverse()[0];
+    if (match) document.getElementById('visit-phone').value = match.phone || '';
+  });
+}
+
+// ===================== ADD VISIT =====================
+function addVisit() {
+  const date = document.getElementById('visit-date').value;
+  const patientName = document.getElementById('visit-patient').value.trim();
+  const phone = document.getElementById('visit-phone').value.trim();
+  const type = document.getElementById('visit-type').value;
+  const amount = parseFloat(document.getElementById('visit-amount').value) || 0;
+  const time = document.getElementById('visit-time').value;
+  const notes = document.getElementById('visit-notes').value.trim();
+  if (!date || !patientName) { alert('Date and patient name are required.'); return; }
+  const visits = getVisits();
+  const location = currentLocation === 'combined' ? 'rogers' : currentLocation;
+  visits.push({id:uid(), location, date, time, patientName, phone, type, amount, notes});
+  saveVisits(visits);
+  document.getElementById('visit-patient').value = '';
+  document.getElementById('visit-phone').value = '';
+  document.getElementById('visit-notes').value = '';
+  document.getElementById('visit-amount').value = DEFAULT_AMOUNTS[document.getElementById('visit-type').value] || '';
+  updatePatientSuggestions();
+  refreshAll();
+}
+
+// ===================== ADD SCHEDULED =====================
+function addScheduled() {
+  const date = document.getElementById('sched-date').value;
+  const patientName = document.getElementById('sched-patient').value.trim();
+  const time = document.getElementById('sched-time').value;
+  const type = document.getElementById('sched-type').value;
+  if (!date || !patientName) { alert('Date and patient name are required.'); return; }
+  const scheduled = getScheduled();
+  const location = currentLocation === 'combined' ? 'rogers' : currentLocation;
+  scheduled.push({id:uid(), location, date, time, patientName, type});
+  saveScheduled(scheduled);
+  document.getElementById('sched-patient').value = '';
+  document.getElementById('sched-time').value = '';
+  refreshAll();
+}
+
+// ===================== MILEAGE =====================
+function routePreset() {
+  const route = document.getElementById('mile-route').value;
+  if (ROUTE_PRESETS[route] !== undefined && ROUTE_PRESETS[route] > 0) {
+    document.getElementById('mile-miles').value = ROUTE_PRESETS[route];
+  } else if (route === 'Custom') {
+    document.getElementById('mile-miles').value = '';
+    document.getElementById('mile-miles').focus();
+  }
+}
+function addMileage() {
+  const date = document.getElementById('mile-date').value;
+  const route = document.getElementById('mile-route').value;
+  const miles = parseFloat(document.getElementById('mile-miles').value) || 0;
+  const purpose = document.getElementById('mile-purpose').value.trim();
+  if (!date || !route || miles <= 0) { alert('Date, route, and miles are required.'); return; }
+  const mileage = getMileage();
+  mileage.push({id:uid(), date, route, miles, purpose});
+  saveMileage(mileage);
+  document.getElementById('mile-route').value = '';
+  document.getElementById('mile-miles').value = '';
+  document.getElementById('mile-purpose').value = '';
+  document.getElementById('mile-date').value = today();
+  refreshMileage();
+}
+function deleteMileage(id) {
+  if (!confirm('Delete this entry?')) return;
+  saveMileage(getMileage().filter(m => m.id !== id));
+  refreshMileage();
+}
+
+// ===================== EXPENSES =====================
+function addExpense() {
+  const date = document.getElementById('exp-date').value;
+  const category = document.getElementById('exp-category').value;
+  const description = document.getElementById('exp-desc').value.trim();
+  const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
+  if (!date || !description || amount <= 0) { alert('All expense fields are required.'); return; }
+  const expenses = getExpenses();
+  expenses.push({id:uid(), date, category, description, amount});
+  saveExpenses(expenses);
+  document.getElementById('exp-desc').value = '';
+  document.getElementById('exp-amount').value = '';
+  document.getElementById('exp-date').value = today();
+  refreshExpenses();
+}
+function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  saveExpenses(getExpenses().filter(e => e.id !== id));
+  refreshExpenses();
+}
+
+// ===================== OVERVIEW REFRESH =====================
+function refreshOverview() {
+  const visits = filterByLocation(getVisits());
+  const scheduled = filterByLocation(getScheduled());
+  const tod = today();
+
+  // Today
+  const todayVisits = visits.filter(v => v.date === tod);
+  document.getElementById('today-patients').textContent = todayVisits.length;
+  document.getElementById('today-revenue').textContent = fmt$(todayVisits.reduce((s,v)=>s+v.amount,0));
+
+  // Remaining today
+  const now = new Date();
+  const currentTime = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const remaining = scheduled.filter(s => s.date === tod && s.time > currentTime);
+  document.getElementById('today-remaining').textContent = remaining.length;
+
+  // Next patient
+  if (remaining.length > 0) {
+    const next = remaining.sort((a,b)=>a.time.localeCompare(b.time))[0];
+    document.getElementById('next-patient-name').textContent = next.patientName;
+    const [hh,mm] = next.time.split(':');
+    const h = parseInt(hh); const ampm = h >= 12 ? 'PM' : 'AM';
+    document.getElementById('next-patient-time').textContent = `${h>12?h-12:h||12}:${mm} ${ampm} — ${next.type}`;
+  } else {
+    document.getElementById('next-patient-name').textContent = 'No upcoming appointments';
+    document.getElementById('next-patient-time').textContent = '';
+  }
+
+  // This Week
+  const [ws,we] = weekRange(tod);
+  const wVisits = visits.filter(v => inRange(v.date,ws,we));
+  const wPats = wVisits.length;
+  const wRev = wVisits.reduce((s,v)=>s+v.amount,0);
+  document.getElementById('week-patients').textContent = wPats;
+  document.getElementById('week-revenue').textContent = fmt$(wRev);
+
+  const [lws,lwe] = lastWeekRange(tod);
+  const lwVisits = visits.filter(v => inRange(v.date,lws,lwe));
+  const lwRev = lwVisits.reduce((s,v)=>s+v.amount,0);
+  renderCompareBadge('week-vs','week-badge', wRev, lwRev, '$');
+
+  // This Month
+  const [ms,me] = monthRange(tod);
+  const mVisits = visits.filter(v => inRange(v.date,ms,me));
+  const mPats = mVisits.length; const mRev = mVisits.reduce((s,v)=>s+v.amount,0);
+  document.getElementById('month-patients').textContent = mPats;
+  document.getElementById('month-revenue').textContent = fmt$(mRev);
+
+  const [lms,lme] = lastMonthRange(tod);
+  const lmVisits = visits.filter(v => inRange(v.date,lms,lme));
+  const lmRev = lmVisits.reduce((s,v)=>s+v.amount,0);
+  renderCompareBadge('month-vs','month-badge', mRev, lmRev, '$');
+
+  // Year to Date
+  const ys = yearStart(tod);
+  const ytdVisits = visits.filter(v => v.date >= ys && v.date <= tod);
+  const ytdPats = ytdVisits.length;
+  const ytdRev = ytdVisits.reduce((s,v)=>s+v.amount,0);
+  document.getElementById('ytd-patients').textContent = ytdPats;
+  document.getElementById('ytd-revenue').textContent = fmt$(ytdRev);
+
+  const todayDate = new Date(tod);
+  const y = todayDate.getFullYear();
+  const doy = dayOfYear(tod);
+  const monthsElapsed = todayDate.getMonth() + (todayDate.getDate()/new Date(y,todayDate.getMonth()+1,0).getDate());
+  const avgMonthly = monthsElapsed > 0 ? ytdRev / monthsElapsed : 0;
+  document.getElementById('ytd-avg').textContent = fmt$(avgMonthly);
+
+  const dailyRate = doy > 0 ? ytdRev / doy : 0;
+  const projection = dailyRate * daysInYear(y);
+  document.getElementById('ytd-projection').textContent = fmt$(projection);
+}
+
+function renderCompareBadge(vsId, badgeId, current, previous, prefix) {
+  const vsEl = document.getElementById(vsId);
+  const badgeEl = document.getElementById(badgeId);
+  if (previous === 0) {
+    vsEl.textContent = '—';
+    badgeEl.innerHTML = '';
+    return;
+  }
+  const pct = ((current - previous) / previous) * 100;
+  const sign = pct >= 0 ? '+' : '';
+  vsEl.textContent = (prefix==='$'?fmt$(current):fmtN(current));
+  const cls = pct >= 0 ? 'badge-up' : 'badge-down';
+  const arrow = pct >= 0 ? '↑' : '↓';
+  badgeEl.innerHTML = `<div class="card-badge ${cls}">${arrow} ${sign}${pct.toFixed(1)}% vs prev</div>`;
+}
+
+// ===================== MILEAGE REFRESH =====================
+function refreshMileage() {
+  const mileage = getMileage();
+  const total = mileage.reduce((s,m)=>s+m.miles,0);
+  const deduction = total * IRS_RATE;
+  const thisYear = new Date().getFullYear().toString();
+  const ytdEntries = mileage.filter(m => m.date.startsWith(thisYear));
+  document.getElementById('total-miles').textContent = total.toFixed(1);
+  document.getElementById('total-mile-deduction').textContent = fmt$(deduction);
+  document.getElementById('total-mile-entries').textContent = ytdEntries.length;
+
+  const tbody = document.getElementById('mileage-table-body');
+  if (mileage.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No mileage entries yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = mileage.slice().reverse().map(m => `
+    <tr>
+      <td>${formatDate(m.date)}</td>
+      <td>${m.route}</td>
+      <td>${m.miles.toFixed(1)}</td>
+      <td>${m.purpose || '—'}</td>
+      <td>${fmt$(m.miles * IRS_RATE)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteMileage('${m.id}')">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+// ===================== EXPENSES REFRESH =====================
+function refreshExpenses() {
+  const expenses = getExpenses();
+  // Category totals
+  const catTotals = {};
+  EXPENSE_CATEGORIES.forEach(c => catTotals[c] = 0);
+  expenses.forEach(e => { catTotals[e.category] = (catTotals[e.category]||0) + e.amount; });
+  const maxVal = Math.max(...Object.values(catTotals), 1);
+
+  const chartEl = document.getElementById('expense-chart');
+  chartEl.innerHTML = EXPENSE_CATEGORIES.map(cat => {
+    const val = catTotals[cat] || 0;
+    if (val === 0) return '';
+    const pct = (val/maxVal*100).toFixed(1);
+    return `
+      <div class="chart-bar-wrap">
+        <div class="chart-bar-label"><span>${cat}</span><span>${fmt$(val)}</span></div>
+        <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join('');
+
+  const tbody = document.getElementById('expenses-table-body');
+  if (expenses.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No expenses logged yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = expenses.slice().reverse().map(e => `
+    <tr>
+      <td>${formatDate(e.date)}</td>
+      <td>${e.category}</td>
+      <td>${e.description}</td>
+      <td>${fmt$(e.amount)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteExpense('${e.id}')">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+// ===================== P&L REFRESH =====================
+function initPLYears() {
+  const visits = getVisits();
+  const expenses = getExpenses();
+  const years = new Set();
+  const now = new Date();
+  years.add(now.getFullYear());
+  visits.forEach(v => years.add(new Date(v.date).getFullYear()));
+  expenses.forEach(e => years.add(new Date(e.date).getFullYear()));
+  const sel = document.getElementById('pl-year');
+  const currentVal = sel.value || now.getFullYear();
+  sel.innerHTML = [...years].sort((a,b)=>b-a).map(y => `<option value="${y}" ${y==currentVal?'selected':''}>${y}</option>`).join('');
+}
+function renderPL() {
+  initPLYears();
+  const year = parseInt(document.getElementById('pl-year').value);
+  const monthVal = document.getElementById('pl-month').value;
+  const monthFilter = monthVal !== '' ? parseInt(monthVal) : null;
+
+  const visits = filterByLocation(getVisits()).filter(v => {
+    const d = new Date(v.date);
+    if (d.getFullYear() !== year) return false;
+    if (monthFilter !== null && d.getMonth() !== monthFilter) return false;
+    return true;
+  });
+  const expenses = getExpenses().filter(e => {
+    const d = new Date(e.date);
+    if (d.getFullYear() !== year) return false;
+    if (monthFilter !== null && d.getMonth() !== monthFilter) return false;
+    return true;
+  });
+
+  // Revenue by type
+  const revByType = {};
+  VISIT_TYPES.forEach(t => revByType[t] = {count:0, amount:0});
+  visits.forEach(v => {
+    if (!revByType[v.type]) revByType[v.type] = {count:0,amount:0};
+    revByType[v.type].count++;
+    revByType[v.type].amount += v.amount;
+  });
+  const totalRev = visits.reduce((s,v)=>s+v.amount,0);
+
+  document.getElementById('pl-revenue-rows').innerHTML = Object.entries(revByType)
+    .filter(([,d])=>d.count>0)
+    .map(([type,d])=>`<div class="pl-row"><span>${type} (${d.count} visits)</span><span>${fmt$(d.amount)}</span></div>`)
+    .join('') || '<div class="pl-row" style="color:var(--gray-500)">No revenue recorded.</div>';
+  document.getElementById('pl-total-revenue').textContent = fmt$(totalRev);
+
+  // Expenses by category
+  const expByCat = {};
+  expenses.forEach(e => { expByCat[e.category] = (expByCat[e.category]||0) + e.amount; });
+  const totalExp = expenses.reduce((s,e)=>s+e.amount,0);
+
+  document.getElementById('pl-expense-rows').innerHTML = Object.entries(expByCat)
+    .map(([cat,amt])=>`<div class="pl-row"><span>${cat}</span><span>${fmt$(amt)}</span></div>`)
+    .join('') || '<div class="pl-row" style="color:var(--gray-500)">No expenses recorded.</div>';
+  document.getElementById('pl-total-expenses').textContent = fmt$(totalExp);
+
+  const net = totalRev - totalExp;
+  const netEl = document.getElementById('pl-net');
+  netEl.textContent = fmt$(net);
+  netEl.className = 'pl-net ' + (net >= 0 ? 'positive' : 'negative');
+}
+
+// ===================== PATIENTS =====================
+function renderPatientList() {
+  const visits = filterByLocation(getVisits());
+  const query = (document.getElementById('patient-search').value || '').toLowerCase();
+
+  // Aggregate by patient
+  const patients = {};
+  visits.forEach(v => {
+    const key = (v.patientName||'').toLowerCase();
+    if (!patients[key]) {
+      patients[key] = {name:v.patientName, phone:v.phone||'', firstVisit:v.date, lastVisit:v.date, totalVisits:0, totalPaid:0, visits:[]};
+    }
+    const p = patients[key];
+    if (v.date < p.firstVisit) p.firstVisit = v.date;
+    if (v.date > p.lastVisit) { p.lastVisit = v.date; p.phone = v.phone||p.phone; }
+    p.totalVisits++;
+    p.totalPaid += v.amount;
+    p.visits.push(v);
+  });
+
+  let list = Object.values(patients).sort((a,b)=>a.name.localeCompare(b.name));
+  if (query) {
+    list = list.filter(p => p.name.toLowerCase().includes(query) || (p.phone||'').includes(query));
+  }
+
+  const tbody = document.getElementById('patient-table-body');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No patients found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.phone||'—'}</td>
+      <td>${formatDate(p.firstVisit)}</td>
+      <td>${p.totalVisits}</td>
+      <td>${fmt$(p.totalPaid)}</td>
+      <td>${formatDate(p.lastVisit)}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="openPatientModal('${encodeURIComponent(p.name)}')">View</button></td>
+    </tr>
+  `).join('');
+}
+
+function openPatientModal(encodedName) {
+  const name = decodeURIComponent(encodedName);
+  const visits = filterByLocation(getVisits()).filter(v => v.patientName === name).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('modal-patient-name').textContent = name;
+
+  const totalPaid = visits.reduce((s,v)=>s+v.amount,0);
+  document.getElementById('modal-summary').innerHTML = `
+    <div class="summary-stat"><div class="s-label">Total Visits</div><div class="s-val">${visits.length}</div></div>
+    <div class="summary-stat"><div class="s-label">Total Paid</div><div class="s-val">${fmt$(totalPaid)}</div></div>
+    <div class="summary-stat"><div class="s-label">First Visit</div><div class="s-val" style="font-size:15px">${visits.length?formatDate(visits[visits.length-1].date):'—'}</div></div>
+    <div class="summary-stat"><div class="s-label">Last Visit</div><div class="s-val" style="font-size:15px">${visits.length?formatDate(visits[0].date):'—'}</div></div>
+  `;
+  document.getElementById('modal-visits-body').innerHTML = visits.map(v => `
+    <tr>
+      <td>${formatDate(v.date)}</td>
+      <td>${v.time||'—'}</td>
+      <td>${v.type}</td>
+      <td>${fmt$(v.amount)}</td>
+      <td style="text-transform:capitalize">${v.location}</td>
+      <td>${v.notes||'—'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--gray-500);padding:20px">No visits</td></tr>';
+
+  document.getElementById('patient-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('patient-modal').classList.remove('open'); }
+
+// ===================== EXPORTS =====================
+function exportMileageCSV() {
+  const mileage = getMileage();
+  const rows = [['Date','Route','Miles','Purpose','Deduction ($)']];
+  mileage.forEach(m => rows.push([m.date, m.route, m.miles, m.purpose||'', (m.miles*IRS_RATE).toFixed(2)]));
+  downloadCSV(rows, 'mileage_log.csv');
+}
+function exportExpensesCSV() {
+  const expenses = getExpenses();
+  const rows = [['Date','Category','Description','Amount ($)']];
+  expenses.forEach(e => rows.push([e.date, e.category, e.description, e.amount.toFixed(2)]));
+  downloadCSV(rows, 'expenses.csv');
+}
+function exportPatientsCSV() {
+  const visits = filterByLocation(getVisits());
+  const patients = {};
+  visits.forEach(v => {
+    const key = v.patientName;
+    if (!patients[key]) patients[key] = {name:v.patientName, phone:v.phone||'', firstVisit:v.date, lastVisit:v.date, totalVisits:0, totalPaid:0};
+    const p = patients[key];
+    if (v.date < p.firstVisit) p.firstVisit = v.date;
+    if (v.date > p.lastVisit) { p.lastVisit = v.date; p.phone = v.phone||p.phone; }
+    p.totalVisits++; p.totalPaid += v.amount;
+  });
+  const rows = [['Name','Phone','First Visit','Total Visits','Total Paid','Last Visit']];
+  Object.values(patients).forEach(p => rows.push([p.name, p.phone, p.firstVisit, p.totalVisits, p.totalPaid.toFixed(2), p.lastVisit]));
+  downloadCSV(rows, 'patients.csv');
+}
+function downloadCSV(rows, filename) {
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+}
+
+// ===================== DATA MANAGEMENT =====================
+function exportAllData() {
+  const data = {
+    visits: getVisits(),
+    scheduled: getScheduled(),
+    mileage: getMileage(),
+    expenses: getExpenses(),
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'chiro_dashboard_backup.json'; a.click();
+}
+function importData(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.visits) saveVisits(data.visits);
+      if (data.scheduled) saveScheduled(data.scheduled);
+      if (data.mileage) saveMileage(data.mileage);
+      if (data.expenses) saveExpenses(data.expenses);
+      alert('Data imported successfully!');
+      refreshAll();
+    } catch { alert('Invalid JSON file.'); }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+function clearData(key) {
+  if (!confirm(`Clear all ${key} data? This cannot be undone.`)) return;
+  setData(key, []);
+  refreshAll();
+}
+
+// ===================== SAMPLE DATA =====================
+function seedSampleData() {
+  if (!confirm('This will ADD sample data to your existing data. Continue?')) return;
+  const visits = getVisits();
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+
+  const names = [
+    ['John Smith','555-0101','rogers'],
+    ['Mary Johnson','555-0102','eureka'],
+    ['Robert Davis','555-0103','rogers'],
+    ['Patricia Brown','555-0104','eureka'],
+    ['James Wilson','555-0105','rogers'],
+    ['Linda Martinez','555-0106','rogers'],
+    ['Michael Garcia','555-0107','eureka'],
+    ['Barbara Anderson','555-0108','rogers'],
+  ];
+  const types = [
+    {type:'New Patient',amount:60},
+    {type:'Existing Patient',amount:40},
+    {type:'4-Visit Plan',amount:140},
+    {type:'Existing Patient',amount:40},
+    {type:'Existing Patient',amount:40},
+  ];
+
+  // Add visits across last 3 months
+  for (let daysAgo = 0; daysAgo < 90; daysAgo += 2) {
+    const d = new Date(now); d.setDate(now.getDate() - daysAgo);
+    const dateStr = d.toISOString().slice(0,10);
+    const numVisits = Math.floor(Math.random()*4)+1;
+    for (let i=0;i<numVisits;i++) {
+      const pt = names[Math.floor(Math.random()*names.length)];
+      const vt = types[Math.floor(Math.random()*types.length)];
+      visits.push({id:uid(), location:pt[2], date:dateStr, time:`${9+Math.floor(Math.random()*8)}:${Math.random()<0.5?'00':'30'}`, patientName:pt[0], phone:pt[1], type:vt.type, amount:vt.amount, notes:''});
+    }
+  }
+  saveVisits(visits);
+
+  // Mileage
+  const mileage = getMileage();
+  for (let i=0;i<12;i++) {
+    const d = new Date(now); d.setDate(now.getDate()-i*7);
+    mileage.push({id:uid(), date:d.toISOString().slice(0,10), route:'Bella Vista → Rogers', miles:24, purpose:'Patient visits'});
+    mileage.push({id:uid(), date:d.toISOString().slice(0,10), route:'Bella Vista → Eureka Springs', miles:52, purpose:'Patient visits'});
+  }
+  saveMileage(mileage);
+
+  // Expenses
+  const expenses = getExpenses();
+  const sampleExp = [
+    {category:'Office Supplies',description:'Paper & pens',amount:42.50},
+    {category:'Software/Tech',description:'EHR Software subscription',amount:89.00},
+    {category:'Insurance',description:'Malpractice insurance',amount:250.00},
+    {category:'Marketing',description:'Facebook ads',amount:75.00},
+    {category:'Professional Development',description:'Seminar registration',amount:199.00},
+    {category:'Equipment',description:'Adjustment table pad',amount:125.00},
+  ];
+  sampleExp.forEach((e,i) => {
+    const d = new Date(now); d.setDate(now.getDate()-i*10);
+    expenses.push({id:uid(), date:d.toISOString().slice(0,10), ...e});
+  });
+  saveExpenses(expenses);
+
+  // Scheduled
+  const scheduled = getScheduled();
+  const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
+  const tomStr = tomorrow.toISOString().slice(0,10);
+  names.slice(0,4).forEach((pt,i) => {
+    scheduled.push({id:uid(), location:pt[2], date:tomStr, time:`${9+i*2}:00`, patientName:pt[0], type:'Existing Patient'});
+  });
+  const todayStr = now.toISOString().slice(0,10);
+  names.slice(4,6).forEach((pt,i) => {
+    const h = now.getHours()+1+i;
+    scheduled.push({id:uid(), location:pt[2], date:todayStr, time:`${h<24?h:23}:00`, patientName:pt[0], type:'Existing Patient'});
+  });
+  saveScheduled(scheduled);
+
+  updatePatientSuggestions();
+  refreshAll();
+  alert('Sample data loaded! Explore the dashboard.');
+}
+
+// ===================== FORMAT DATE =====================
+function formatDate(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(m)-1]} ${parseInt(day)}, ${y}`;
+}
+
+// ===================== REFRESH ALL =====================
+function refreshAll() {
+  if (currentTab === 'overview') refreshOverview();
+  if (currentTab === 'mileage') refreshMileage();
+  if (currentTab === 'expenses') refreshExpenses();
+  if (currentTab === 'pl') renderPL();
+  if (currentTab === 'patients') renderPatientList();
+}
+
+// ===================== INIT =====================
+function initApp() {
+  updateTopbarDate();
+  initRateBanner();
+  setInputDefaults();
+  setupVisitTypeChange();
+  updatePatientSuggestions();
+  initPLYears();
+  refreshOverview();
+
+  // Close modal on overlay click
+  document.getElementById('patient-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Keyboard: close modal on Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Update clock every minute
+  setInterval(updateTopbarDate, 60000);
+  setInterval(() => { if (currentTab === 'overview') refreshOverview(); }, 60000);
+}
+
+// ===================== BOOT =====================
+window.addEventListener('DOMContentLoaded', function() {
+  // PIN entry keyboard support
+  document.addEventListener('keydown', function(e) {
+    const pinVisible = !document.getElementById('pin-screen').classList.contains('hidden');
+    if (!pinVisible) return;
+    if (e.key >= '0' && e.key <= '9') pinKey(e.key);
+    if (e.key === 'Backspace') pinClear();
+    if (e.key === 'Escape') pinReset();
+  });
+
+  if (!checkRemembered()) {
+    // Show PIN screen (already visible by default)
+  }
+});
+</script>
+</body>
+</html>
